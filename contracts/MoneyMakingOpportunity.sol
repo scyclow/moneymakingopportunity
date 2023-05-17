@@ -4,23 +4,122 @@
 
 
 import "./Dependencies.sol";
-import "./MMOMetadata.sol";
+import "hardhat/console.sol";
 
 pragma solidity ^0.8.17;
 
 
+interface IURI {
+  function tokenURI(uint256 tokenId) external view returns (string memory);
+}
+
+contract MoneyMakingOpportunity is ERC721, Ownable {
+  uint256 private _totalSupply = 1;
+  address private uriContract;
+
+  bool public isLocked = true;
+  uint256 public startTime;
+  uint256 public settlementTime;
 
 
-contract MoneyMakingOpportunity is ERC721 {
-  uint256 private _totalSupply = 0;
-  MMOMetadata private _metadataContract;
+  mapping(address => uint256) public addrToTokenId;
+  mapping(uint256 => mapping(uint256 => bool)) private _tokenVotes;
+  mapping(uint256 => address) public paymentAddressProposals;
 
-  constructor() ERC721('Money Making Opportunity', 'MMO') {
-    _metadataContract = new MMOMetadata(this);
+  /// @dev This event emits when the metadata of a token is changed.
+  /// So that the third-party platforms such as NFT market could
+  /// timely update the images and related attributes of the NFT.
+  event MetadataUpdate(uint256 _tokenId);
+
+  /// @dev This event emits when the metadata of a range of tokens is changed.
+  /// So that the third-party platforms such as NFT market could
+  /// timely update the images and related attributes of the NFTs.
+  event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
+
+  constructor() ERC721('Money Making Opportunity', 'MMO') {}
+
+  receive() external payable {
+    if (isLocked && addrToTokenId[msg.sender] == 0 && msg.value >= 0.03 ether) {
+      addrToTokenId[msg.sender] = _totalSupply;
+      _totalSupply++;
+    }
   }
 
+  function unlock(address _uriContract) external onlyOwner {
+    require(isLocked, '1');
+    isLocked = false;
+    startTime = block.timestamp;
+    setUriContract(_uriContract);
+    _mint(msg.sender, 0);
+  }
+
+  function mint() external {
+    require(!isLocked, '2');
+    _mint(msg.sender, addrToTokenId[msg.sender]);
+  }
+
+  function castVote(uint256 tokenId, uint256 period, bool vote) external {
+    require(ownerOf(tokenId) == msg.sender, '4');
+    require(period >= currentPeriod(), '5');
+    _tokenVotes[tokenId][period] = vote;
+    emit MetadataUpdate(tokenId);
+  }
+
+
+  function commitPaymentAddressProposal(uint256 tokenId, address paymentAddress) external {
+    require(!isDisqualified(tokenId), '6');
+    require(ownerOf(tokenId) == msg.sender, '4');
+    require(paymentAddressProposals[tokenId] == address(0), '7');
+    paymentAddressProposals[tokenId] = paymentAddress;
+  }
+
+
+  function settlePayment() external {
+    require(settlementTime == 0, '8');
+    uint256 yays = 1;
+    uint256 nays;
+    uint256 currentLeaderToken = leaderToken();
+
+
+    for (uint256 i = 0; i < currentLeaderToken; i++) {
+
+      if (_tokenVotes[i][currentPeriod()]) yays++;
+      else nays++;
+    }
+
+    require(yays >= nays, '8');
+
+    settlementTime = block.timestamp;
+
+    payable(paymentAddressProposals[currentLeaderToken]).send(address(this).balance);
+  }
+
+
+  function currentPeriod() public view returns (uint256) {
+    if (isLocked) return 0;
+    uint256 endTime = settlementTime > 0 ? settlementTime : block.timestamp;
+    uint256 period = 1 + (endTime - startTime) / 1 weeks;
+
+    return period >= _totalSupply ? _totalSupply : period;
+  }
+
+  function leaderToken() public view returns (uint256) {
+    if (isLocked) return 0;
+    return _totalSupply - currentPeriod();
+  }
+
+  function isDisqualified (uint256 tokenId) public view returns (bool) {
+    return tokenId > leaderToken();
+  }
+
+  function votes(uint256 tokenId, uint256 period) public view returns (bool) {
+    return _tokenVotes[tokenId][period];
+  }
+
+
+
   function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-    return _metadataContract.tokenURI(tokenId);
+    return IURI(uriContract).tokenURI(tokenId);
   }
 
   function totalSupply() external view returns (uint256) {
@@ -31,9 +130,12 @@ contract MoneyMakingOpportunity is ERC721 {
     return _exists(tokenId);
   }
 
-  function metadataContract() external view returns (address) {
-    return address(_metadataContract);
+  function setUriContract(address _uriContract) public onlyOwner {
+    require(!isLocked, '2');
+    uriContract = _uriContract;
+    emit BatchMetadataUpdate(0, _totalSupply);
   }
+
 
   /// @notice Query if a contract implements an interface
   /// @param interfaceId The interface identifier, as specified in ERC-165
@@ -45,5 +147,4 @@ contract MoneyMakingOpportunity is ERC721 {
   function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721) returns (bool) {
     return interfaceId == bytes4(0x49064906) || super.supportsInterface(interfaceId);
   }
-
 }
