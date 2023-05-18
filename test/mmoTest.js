@@ -51,10 +51,10 @@ describe('MoneyMakingOpportunity', () => {
   describe('constructor', () => {
     it('should work', async () => {
       expect(await MMO.connect(artist).isLocked()).to.equal(true)
-      expect(await MMO.connect(artist).startTime()).to.equal(0)
-      expect(await MMO.connect(artist).settlementTime()).to.equal(0)
+      expect(await MMO.connect(artist).beginning()).to.equal(0)
+      expect(await MMO.connect(artist).ending()).to.equal(0)
       expect(await MMO.connect(artist).currentPeriod()).to.equal(0)
-      expect(await MMO.connect(artist).totalSupply()).to.equal(1)
+      expect(await MMO.connect(artist).contributors()).to.equal(1)
     })
   })
 
@@ -62,15 +62,15 @@ describe('MoneyMakingOpportunity', () => {
     it('should remain locked until unlocked', async () => {
       await time.increase(60*60*24*7*2) // two weeks
       expect(await MMO.connect(artist).currentPeriod()).to.equal(0)
-      expect(await MMO.connect(artist).startTime()).to.equal(0)
+      expect(await MMO.connect(artist).beginning()).to.equal(0)
 
       await signers[1].sendTransaction({to: MMO.address, value: ethers.utils.parseEther('0.03')})
 
       await MMO.connect(artist).unlock(zeroAddr)
       expect(await MMO.connect(artist).isLocked()).to.equal(false)
-      const startTime = _num(await time.latest())
+      const beginning = _num(await time.latest())
 
-      expect(_num(await MMO.connect(artist).startTime())).to.equal(startTime)
+      expect(_num(await MMO.connect(artist).beginning())).to.equal(beginning)
 
       expect(await MMO.connect(artist).currentPeriod()).to.equal(1)
       await time.increase(60*60*24*7) // one week
@@ -105,26 +105,31 @@ describe('MoneyMakingOpportunity', () => {
 
       await signers[10].sendTransaction({
         to: MMO.address,
-        value: ethers.utils.parseEther('0.0299')
+        value: ethers.utils.parseEther('0.015')
       })
 
       await signers[10].sendTransaction({
         to: MMO.address,
+        value: ethers.utils.parseEther('0.015')
+      })
+
+      await signers[11].sendTransaction({
+        to: MMO.address,
         value: ethers.utils.parseEther('0.0299')
       })
 
-      expect(await MMO.connect(artist).totalSupply()).to.equal(10)
+      expect(await MMO.connect(artist).contributors()).to.equal(11)
     })
 
-    it('should not update totalSupply after unlocked', async () => {
-      expect(await MMO.connect(artist).totalSupply()).to.equal(1)
+    it('should not update contributors after unlocked', async () => {
+      expect(await MMO.connect(artist).contributors()).to.equal(1)
       await signers[1].sendTransaction({to: MMO.address, value: ethers.utils.parseEther('0.03')})
       await MMO.connect(artist).unlock(zeroAddr)
 
       await signers[2].sendTransaction({to: MMO.address, value: ethers.utils.parseEther('0.03')})
       await signers[3].sendTransaction({to: MMO.address, value: ethers.utils.parseEther('0.03')})
 
-      expect(await MMO.connect(artist).totalSupply()).to.equal(2)
+      expect(await MMO.connect(artist).contributors()).to.equal(2)
     })
 
     it('should not allow minting', async () => {
@@ -133,23 +138,23 @@ describe('MoneyMakingOpportunity', () => {
         value: ethers.utils.parseEther('0.03')
       })
 
-      await expectRevert(MMO.connect(signers[1]).mint(), '2')
+      await expectRevert(MMO.connect(signers[1]).claim(), '2')
     })
 
-    it('should mint token 0 to artist without affecting totalSupply', async () => {
-      expect(await MMO.connect(artist).totalSupply()).to.equal(1)
+    it('should mint token 0 to artist without affecting contributors', async () => {
+      expect(await MMO.connect(artist).contributors()).to.equal(1)
       expect(await MMO.connect(artist).exists(0)).to.equal(false)
 
       await MMO.connect(artist).unlock(zeroAddr)
 
-      expect(await MMO.connect(artist).totalSupply()).to.equal(1)
+      expect(await MMO.connect(artist).contributors()).to.equal(1)
       expect(await MMO.connect(artist).exists(0)).to.equal(true)
       expect(await MMO.connect(artist).ownerOf(0)).to.equal(artist.address)
     })
   })
 
   describe('minting', () => {
-    it('should allow everyone who contributed >= 0.03 at once to mint', async () => {
+    it('should allow everyone who contributed >= 0.03 to mint', async () => {
       await Promise.all(times(8, i =>
         signers[i+1].sendTransaction({
           to: MMO.address,
@@ -178,22 +183,58 @@ describe('MoneyMakingOpportunity', () => {
       await Promise.all(times(9, async i => {
         const s = signers[i+1]
         expect(await MMO.connect(s).exists(i+1)).to.equal(false)
-        await MMO.connect(s).mint()
+        await MMO.connect(s).claim()
         expect(await MMO.connect(s).exists(i+1)).to.equal(true)
         expect(await MMO.connect(s).ownerOf(i+1)).to.equal(s.address)
 
         await expectRevert(
-          MMO.connect(s).mint(),
-          'ERC721: token already minted'
+          MMO.connect(s).claim(),
+          'Already minted'
         )
       }))
 
       expect(await MMO.connect(signers[10]).exists(10)).to.equal(false)
       await expectRevert(
-        MMO.connect(signers[10]).mint(),
-        'ERC721: token already minted'
+        MMO.connect(signers[11]).claim(),
+        'Already minted'
       )
       expect(await MMO.connect(artist).ownerOf(0)).to.equal(artist.address)
+    })
+
+    it('shouldnt mint the correct token number if they contribute multiple times', async () => {
+      await signers[1].sendTransaction({
+        to: MMO.address,
+        value: ethers.utils.parseEther('0.02')
+      })
+
+      await signers[2].sendTransaction({
+        to: MMO.address,
+        value: ethers.utils.parseEther('0.03')
+      })
+
+
+      await signers[1].sendTransaction({
+        to: MMO.address,
+        value: ethers.utils.parseEther('0.02')
+      })
+
+      await signers[3].sendTransaction({
+        to: MMO.address,
+        value: ethers.utils.parseEther('0.03')
+      })
+
+      await signers[2].sendTransaction({
+        to: MMO.address,
+        value: ethers.utils.parseEther('0.03')
+      })
+
+      await MMO.connect(artist).unlock(zeroAddr)
+      await Promise.all(times(3, i => MMO.connect(signers[i+1]).claim()))
+
+      expect(await MMO.connect(artist).ownerOf(1)).to.equal(signers[2].address)
+      expect(await MMO.connect(artist).ownerOf(2)).to.equal(signers[1].address)
+      expect(await MMO.connect(artist).ownerOf(3)).to.equal(signers[3].address)
+      expect(await MMO.connect(artist).exists(4)).to.equal(false)
     })
   })
 
@@ -211,7 +252,7 @@ describe('MoneyMakingOpportunity', () => {
       await MMO.connect(artist).unlock(zeroAddr)
 
       expect(await MMO.connect(artist).currentPeriod()).to.equal(1)
-      expect(await MMO.connect(artist).totalSupply()).to.equal(10)
+      expect(await MMO.connect(artist).contributors()).to.equal(10)
       expect(await MMO.connect(artist).leaderToken()).to.equal(9)
       expect(await MMO.connect(artist).exists(10)).to.equal(false)
 
@@ -259,7 +300,7 @@ describe('MoneyMakingOpportunity', () => {
 
       await MMO.connect(artist).unlock(zeroAddr)
 
-      await Promise.all(times(10, i => MMO.connect(signers[i+1]).mint()))
+      await Promise.all(times(10, i => MMO.connect(signers[i+1]).claim()))
 
       await time.increase(60*60*24*7 * 5)
 
@@ -274,7 +315,7 @@ describe('MoneyMakingOpportunity', () => {
       await MMO.connect(signers[3]).castVote(3, 6, true)
       await MMO.connect(signers[4]).castVote(4, 6, true)
 
-      await MMO.connect(signers[5]).commitPaymentAddressProposal(5, zeroAddr)
+      await MMO.connect(signers[5]).commitSettlementAddressProposal(5, zeroAddr)
       await MMO.connect(signers[5]).settlePayment()
 
       await time.increase(60*60*24*7 * 10) //10 more weeks
@@ -307,7 +348,7 @@ describe('MoneyMakingOpportunity', () => {
     })
   })
 
-  describe.only('tokenIdToPeriod', () => {
+  describe('tokenIdToPeriod', () => {
     it('should be correct', async () => {
       await Promise.all(times(9, i =>
         signers[i+1].sendTransaction({
@@ -330,7 +371,7 @@ describe('MoneyMakingOpportunity', () => {
   })
 
   describe('voting', () => {
-    describe.only('castVote', () => {
+    describe('castVote', () => {
       it('should cast a vote', async () => {
         signers[1].sendTransaction({
           to: MMO.address,
@@ -344,7 +385,7 @@ describe('MoneyMakingOpportunity', () => {
 
         await MMO.connect(artist).unlock(zeroAddr)
 
-        await MMO.connect(signers[1]).mint()
+        await MMO.connect(signers[1]).claim()
 
         await expectRevert(
           MMO.connect(signers[2]).castVote(1, 1, true),
@@ -383,7 +424,7 @@ describe('MoneyMakingOpportunity', () => {
 
         await MMO.connect(artist).unlock(zeroAddr)
 
-        await MMO.connect(signers[1]).mint()
+        await MMO.connect(signers[1]).claim()
 
         await expectRevert(
           MMO.connect(signers[2]).castVote(1, 1, true),
@@ -405,7 +446,7 @@ describe('MoneyMakingOpportunity', () => {
         await MMO.connect(artist).unlock(zeroAddr)
         await time.increase(60*60*24*7) // one week
 
-        await MMO.connect(signers[1]).mint()
+        await MMO.connect(signers[1]).claim()
 
         expect(await MMO.connect(artist).currentPeriod()).to.equal(2)
 
@@ -428,8 +469,8 @@ describe('MoneyMakingOpportunity', () => {
         })
 
         await MMO.connect(artist).unlock(zeroAddr)
-        await MMO.connect(signers[1]).mint()
-        await MMO.connect(signers[2]).mint()
+        await MMO.connect(signers[1]).claim()
+        await MMO.connect(signers[2]).claim()
 
         await MMO.connect(signers[0]).castVote(0, 1, true)
 
@@ -442,7 +483,7 @@ describe('MoneyMakingOpportunity', () => {
       })
     })
 
-    describe.only('calculateVotes', () => {
+    describe('calculateVotes', () => {
       it('should calculate all valid votes', async () => {
         await Promise.all(times(9, async i =>
           signers[i+1].sendTransaction({
@@ -452,7 +493,24 @@ describe('MoneyMakingOpportunity', () => {
         ))
 
         await MMO.connect(artist).unlock(zeroAddr)
-        await Promise.all(times(9, i => MMO.connect(signers[i+1]).mint()))
+        await Promise.all(times(9, i => MMO.connect(signers[i+1]).claim()))
+
+        await MMO.connect(signers[1]).castVote(1, 1, true)
+        await MMO.connect(signers[1]).castVote(1, 1, true)
+        await MMO.connect(signers[1]).castVote(1, 1, true)
+
+
+        const votes0 = await MMO.connect(signers[1]).calculateVotes(1)
+
+        expect(_num(votes0[0])).to.equal('2')
+        expect(_num(votes0[1])).to.equal('8')
+
+        await MMO.connect(signers[1]).castVote(1, 1, false)
+        await MMO.connect(signers[1]).castVote(1, 1, false)
+
+        const votes1 = await MMO.connect(signers[1]).calculateVotes(1)
+        expect(_num(votes1[0])).to.equal('1')
+        expect(_num(votes1[1])).to.equal('9')
 
         for (let i = 0; i < 10; i++) {
           for (let j = 1; j < 10; j++) {
@@ -462,15 +520,181 @@ describe('MoneyMakingOpportunity', () => {
 
         await Promise.all(times(10, async i => {
           const expectedYayVotes = String(10 - i)
-          const votes1 = await MMO.connect(signers[1]).calculateVotes(i+1)
+          const votes2 = await MMO.connect(signers[1]).calculateVotes(i+1)
 
-          expect(_num(votes1[0])).to.equal(expectedYayVotes)
-          expect(_num(votes1[1])).to.equal('0')
+          expect(_num(votes2[0])).to.equal(expectedYayVotes)
+          expect(_num(votes2[1])).to.equal('0')
         }))
       })
+    })
+  })
+
+  describe('commitSettlementAddressProposal', () => {
+    const proposedAddr = '0x1234000000000000000000000000000000000000'
+
+    beforeEach(async () => {
+      signers[1].sendTransaction({
+        to: MMO.address,
+        value: ethers.utils.parseEther('0.03')
+      })
+
+      signers[2].sendTransaction({
+        to: MMO.address,
+        value: ethers.utils.parseEther('0.03')
+      })
+
+      signers[3].sendTransaction({
+        to: MMO.address,
+        value: ethers.utils.parseEther('0.03')
+      })
+
+      signers[4].sendTransaction({
+        to: MMO.address,
+        value: ethers.utils.parseEther('0.03')
+      })
+
+      await MMO.connect(artist).unlock(zeroAddr)
+      await Promise.all(times(4, i => MMO.connect(signers[i+1]).claim()))
 
     })
 
+    it('should set a payment address proposal for token', async () => {
+      expect(await MMO.connect(artist).settlementAddressProposals(3)).to.equal(zeroAddr)
+      expect(await MMO.connect(artist).settlementAddressProposals(4)).to.equal(zeroAddr)
 
+      await MMO.connect(signers[4]).commitSettlementAddressProposal(4, proposedAddr)
+      expect(await MMO.connect(artist).settlementAddressProposals(4)).to.equal(proposedAddr)
+      await time.increase(60*60*24*7) // one week
+
+      await MMO.connect(signers[3]).commitSettlementAddressProposal(3, proposedAddr)
+      expect(await MMO.connect(artist).settlementAddressProposals(3)).to.equal(proposedAddr)
+    })
+
+    it('should error if called by non token owner', async () => {
+      await expectRevert(MMO.connect(signers[4]).commitSettlementAddressProposal(3, proposedAddr), '4')
+      await expectRevert(MMO.connect(signers[3]).commitSettlementAddressProposal(4, proposedAddr), '4')
+    })
+
+    it('should not be called multiple times', async () => {
+      await MMO.connect(signers[4]).commitSettlementAddressProposal(4, proposedAddr)
+      await expectRevert(MMO.connect(signers[4]).commitSettlementAddressProposal(4, zeroAddr), '7')
+    })
+
+    it('should error if called after token has been eliminated', async () => {
+      await time.increase(60*60*24*7) // one week
+      await expectRevert(MMO.connect(signers[4]).commitSettlementAddressProposal(4, proposedAddr), '6')
+
+      await MMO.connect(signers[3]).commitSettlementAddressProposal(3, proposedAddr)
+      expect(await MMO.connect(artist).settlementAddressProposals(3)).to.equal(proposedAddr)
+    })
+  })
+
+  describe('settlement', () => {
+    const proposedAddr1 = '0x1234000000000000000000000000000000000000'
+    const proposedAddr2 = '0x5678000000000000000000000000000000000000'
+
+    beforeEach(async () => {
+      signers[1].sendTransaction({
+        to: MMO.address,
+        value: ethers.utils.parseEther('0.03')
+      })
+
+      signers[2].sendTransaction({
+        to: MMO.address,
+        value: ethers.utils.parseEther('0.03')
+      })
+
+      signers[3].sendTransaction({
+        to: MMO.address,
+        value: ethers.utils.parseEther('0.03')
+      })
+
+
+      await MMO.connect(artist).unlock(zeroAddr)
+      await Promise.all(times(3, i => MMO.connect(signers[i+1]).claim()))
+
+      await MMO.connect(signers[3]).commitSettlementAddressProposal(3, proposedAddr1)
+      await MMO.connect(signers[2]).commitSettlementAddressProposal(2, proposedAddr2)
+    })
+
+
+    it('should be callable if current period has > 50% yay votes', async () => {
+      const startingDestinationBalance = num(await ethers.provider.getBalance(proposedAddr1))
+      const startingContractBalance = num(await ethers.provider.getBalance(MMO.address))
+
+      await MMO.connect(signers[0]).castVote(0, 1, true)
+      await MMO.connect(signers[1]).castVote(1, 1, true)
+      await MMO.connect(signers[2]).castVote(2, 1, true)
+
+      await MMO.connect(signers[3]).settlePayment()
+
+      const endingDestinationBalance = num(await ethers.provider.getBalance(proposedAddr1))
+      const endingContractBalance = num(await ethers.provider.getBalance(MMO.address))
+
+      expect(startingContractBalance).to.equal(0.09)
+      expect(endingContractBalance).to.equal(0)
+
+      expect(startingDestinationBalance).to.equal(0)
+      expect(endingDestinationBalance).to.equal(0.09)
+    })
+
+    it('should be callable if current period has == 50% yay votes', async () => {
+      const startingDestinationBalance = num(await ethers.provider.getBalance(proposedAddr1))
+
+      await MMO.connect(signers[0]).castVote(0, 1, true)
+      await MMO.connect(signers[1]).castVote(1, 1, true)
+
+      await MMO.connect(signers[3]).settlePayment()
+
+      const endingDestinationBalance = num(await ethers.provider.getBalance(proposedAddr1))
+      const endingContractBalance = num(await ethers.provider.getBalance(MMO.address))
+
+      expect(endingContractBalance).to.equal(0)
+      expect(endingDestinationBalance - startingDestinationBalance).to.equal(0.09)
+    })
+
+    it('should not be callable if current period has < 50% yay votes', async () => {
+      expectRevert(MMO.connect(signers[3]).settlePayment(), '10')
+    })
+
+    it('should be callable by anyone', async () => {
+      await MMO.connect(signers[0]).castVote(0, 1, true)
+      await MMO.connect(signers[1]).castVote(1, 1, true)
+
+      await MMO.connect(signers[6]).settlePayment()
+    })
+
+    it('should always resolve to currentPeriod', async () => {
+
+      await expectRevert(
+        MMO.connect(signers[3]).settlePayment(),
+        '10'
+      )
+
+      await MMO.connect(signers[0]).castVote(0, 1, true)
+      await MMO.connect(signers[1]).castVote(1, 1, true)
+      await time.increase(60*60*24*7) // one week
+
+      await MMO.connect(signers[1]).castVote(1, 2, true)
+
+      await MMO.connect(signers[2]).settlePayment()
+
+      const endingDestinationBalance = num(await ethers.provider.getBalance(proposedAddr2))
+      const endingContractBalance = num(await ethers.provider.getBalance(MMO.address))
+
+      expect(endingContractBalance).to.equal(0)
+      expect(endingDestinationBalance).to.equal(0.09)
+    })
+
+    it('should not be callable multiple times', async () => {
+      await MMO.connect(signers[0]).castVote(0, 1, true)
+      await MMO.connect(signers[1]).castVote(1, 1, true)
+
+      await MMO.connect(signers[3]).settlePayment()
+      await expectRevert(
+        MMO.connect(signers[3]).settlePayment(),
+        '8'
+      )
+    })
   })
 })

@@ -14,17 +14,21 @@ interface IURI {
 }
 
 contract MoneyMakingOpportunity is ERC721, Ownable {
-  uint256 private _totalSupply = 1;
-  address private uriContract;
+  uint256 constant public FAIR_PRICE = 0.03 ether;
+
+  uint256 public totalSupply;
 
   bool public isLocked = true;
-  uint256 public startTime;
-  uint256 public settlementTime;
+  uint256 public beginning;
+  uint256 public ending;
+  address public uriContract;
+  uint256 public contributors;
 
 
   mapping(address => uint256) public addrToTokenId;
   mapping(uint256 => mapping(uint256 => bool)) private _tokenVotes;
-  mapping(uint256 => address) public paymentAddressProposals;
+  mapping(uint256 => address) public settlementAddressProposals;
+  mapping(address => uint256) public amountPaid;
 
   /// @dev This event emits when the metadata of a token is changed.
   /// So that the third-party platforms such as NFT market could
@@ -36,35 +40,47 @@ contract MoneyMakingOpportunity is ERC721, Ownable {
   /// timely update the images and related attributes of the NFTs.
   event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
 
-  constructor() ERC721('Money Making Opportunity', 'MMO') {}
+  constructor() ERC721('Money Making Opportunity', 'MMO') {
+    contributors++;
+  }
 
   receive() external payable {
-    if (isLocked && addrToTokenId[msg.sender] == 0 && msg.value >= 0.03 ether) {
-      addrToTokenId[msg.sender] = _totalSupply;
-      _totalSupply++;
+    uint256 originalAmount = amountPaid[msg.sender];
+    amountPaid[msg.sender] += msg.value;
 
-    } else if (settlementTime > 0) {
-      payable(paymentAddressProposals[leaderToken()]) .send(address(this).balance);
+    if (
+      isLocked
+      && originalAmount < FAIR_PRICE
+      && amountPaid[msg.sender] >= FAIR_PRICE
+    ) {
+      addrToTokenId[msg.sender] = contributors;
+      contributors++;
+
+    } else if (ending > 0) {
+      payable(settlementAddressProposals[leaderToken()]) .send(address(this).balance);
     }
   }
 
   function unlock(address _uriContract) external onlyOwner {
     require(isLocked, '1');
     isLocked = false;
-    startTime = block.timestamp;
+    beginning = block.timestamp;
+    totalSupply++;
     setUriContract(_uriContract);
     _mint(msg.sender, 0);
   }
 
-  function mint() external {
+  function claim() external {
     require(!isLocked, '2');
+
+    totalSupply++;
     _mint(msg.sender, addrToTokenId[msg.sender]);
   }
 
   function castVote(uint256 tokenId, uint256 period, bool vote) external {
     require(ownerOf(tokenId) == msg.sender, '4');
     require(period >= currentPeriod(), '5');
-    require(settlementTime == 0, '9');
+    require(ending == 0, '9');
 
     _tokenVotes[tokenId][period] = vote;
     emit MetadataUpdate(tokenId);
@@ -72,7 +88,7 @@ contract MoneyMakingOpportunity is ERC721, Ownable {
 
   // function castVotes(uint256[] calldata tokenIds, uint256 period, bool vote) external {
   //   require(period >= currentPeriod(), '5');
-  //   require(settlementTime == 0, '9');
+  //   require(ending == 0, '9');
 
   //   uint len = tokenIds.length;
 
@@ -82,29 +98,28 @@ contract MoneyMakingOpportunity is ERC721, Ownable {
   //     _tokenVotes[tokenId][period] = vote;
   //   }
 
-    // emit BatchMetadataUpdate(0, _totalSupply);
+    // emit BatchMetadataUpdate(0, contributors);
   // }
 
 
-  function commitPaymentAddressProposal(uint256 tokenId, address paymentAddress) external {
+  function commitSettlementAddressProposal(uint256 tokenId, address settlementAddress) external {
     require(!isEliminated(tokenId), '6');
     require(ownerOf(tokenId) == msg.sender, '4');
-    require(paymentAddressProposals[tokenId] == address(0), '7');
-    paymentAddressProposals[tokenId] = paymentAddress;
+    require(settlementAddressProposals[tokenId] == address(0), '7');
+    settlementAddressProposals[tokenId] = settlementAddress;
     emit MetadataUpdate(tokenId);
   }
 
 
   function settlePayment() external {
-    require(settlementTime == 0, '8');
+    require(ending == 0, '8');
 
-    uint256 currentLeaderToken = currentPeriod();
-    (uint256 yays, uint256 nays) = calculateVotes(currentLeaderToken);
+    (uint256 yays, uint256 nays) = calculateVotes(currentPeriod());
 
     require(yays >= nays, '10');
 
-    settlementTime = block.timestamp;
-    payable(paymentAddressProposals[currentLeaderToken]).send(address(this).balance);
+    ending = block.timestamp;
+    payable(settlementAddressProposals[leaderToken()]).send(address(this).balance);
   }
 
   function calculateVotes(uint256 period) public view returns (uint256, uint256) {
@@ -121,21 +136,21 @@ contract MoneyMakingOpportunity is ERC721, Ownable {
   }
 
   function tokenIdToPeriod(uint256 tokenId) public view returns (uint256) {
-    return _totalSupply - tokenId;
+    return contributors - tokenId;
   }
 
   function periodToTokenId(uint256 period) public view returns (uint256) {
     if (isLocked) return 0;
-    return _totalSupply - period;
+    return contributors - period;
   }
 
 
   function currentPeriod() public view returns (uint256) {
     if (isLocked) return 0;
-    uint256 endTime = settlementTime > 0 ? settlementTime : block.timestamp;
-    uint256 period = 1 + (endTime - startTime) / 1 weeks;
+    uint256 endTime = ending > 0 ? ending : block.timestamp;
+    uint256 period = 1 + (endTime - beginning) / 1 weeks;
 
-    return period >= _totalSupply ? _totalSupply : period;
+    return period >= contributors ? contributors : period;
   }
 
   function leaderToken() public view returns (uint256) {
@@ -156,17 +171,13 @@ contract MoneyMakingOpportunity is ERC721, Ownable {
     return IURI(uriContract).tokenURI(tokenId);
   }
 
-  function totalSupply() external view returns (uint256) {
-    return _totalSupply;
-  }
-
   function exists(uint256 tokenId) external view returns (bool) {
     return _exists(tokenId);
   }
 
   function setUriContract(address _uriContract) public onlyOwner {
     uriContract = _uriContract;
-    emit BatchMetadataUpdate(0, _totalSupply);
+    emit BatchMetadataUpdate(0, contributors);
   }
 
 
