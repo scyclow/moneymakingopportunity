@@ -42,6 +42,9 @@ contract MoneyMakingOpportunity is ERC721, Ownable {
     if (isLocked && addrToTokenId[msg.sender] == 0 && msg.value >= 0.03 ether) {
       addrToTokenId[msg.sender] = _totalSupply;
       _totalSupply++;
+
+    } else if (settlementTime > 0) {
+      payable(paymentAddressProposals[leaderToken()]) .send(address(this).balance);
     }
   }
 
@@ -61,37 +64,69 @@ contract MoneyMakingOpportunity is ERC721, Ownable {
   function castVote(uint256 tokenId, uint256 period, bool vote) external {
     require(ownerOf(tokenId) == msg.sender, '4');
     require(period >= currentPeriod(), '5');
+    require(settlementTime == 0, '9');
+
     _tokenVotes[tokenId][period] = vote;
     emit MetadataUpdate(tokenId);
   }
 
+  // function castVotes(uint256[] calldata tokenIds, uint256 period, bool vote) external {
+  //   require(period >= currentPeriod(), '5');
+  //   require(settlementTime == 0, '9');
+
+  //   uint len = tokenIds.length;
+
+  //   for (uint256 i; i < len; i++) {
+  //     uint256 tokenId = tokenIds[i];
+  //     require(ownerOf(tokenId) == msg.sender, '4');
+  //     _tokenVotes[tokenId][period] = vote;
+  //   }
+
+    // emit BatchMetadataUpdate(0, _totalSupply);
+  // }
+
 
   function commitPaymentAddressProposal(uint256 tokenId, address paymentAddress) external {
-    require(!isDisqualified(tokenId), '6');
+    require(!isEliminated(tokenId), '6');
     require(ownerOf(tokenId) == msg.sender, '4');
     require(paymentAddressProposals[tokenId] == address(0), '7');
     paymentAddressProposals[tokenId] = paymentAddress;
+    emit MetadataUpdate(tokenId);
   }
 
 
   function settlePayment() external {
     require(settlementTime == 0, '8');
+
+    uint256 currentLeaderToken = currentPeriod();
+    (uint256 yays, uint256 nays) = calculateVotes(currentLeaderToken);
+
+    require(yays >= nays, '10');
+
+    settlementTime = block.timestamp;
+    payable(paymentAddressProposals[currentLeaderToken]).send(address(this).balance);
+  }
+
+  function calculateVotes(uint256 period) public view returns (uint256, uint256) {
     uint256 yays = 1;
     uint256 nays;
-    uint256 currentLeaderToken = leaderToken();
+    uint256 tokenId = periodToTokenId(period);
 
-
-    for (uint256 i = 0; i < currentLeaderToken; i++) {
-
-      if (_tokenVotes[i][currentPeriod()]) yays++;
+    for (uint256 i = 0; i < tokenId; i++) {
+      if (_tokenVotes[i][period]) yays++;
       else nays++;
     }
 
-    require(yays >= nays, '8');
+    return (yays, nays);
+  }
 
-    settlementTime = block.timestamp;
+  function tokenIdToPeriod(uint256 tokenId) public view returns (uint256) {
+    return _totalSupply - tokenId;
+  }
 
-    payable(paymentAddressProposals[currentLeaderToken]).send(address(this).balance);
+  function periodToTokenId(uint256 period) public view returns (uint256) {
+    if (isLocked) return 0;
+    return _totalSupply - period;
   }
 
 
@@ -104,11 +139,10 @@ contract MoneyMakingOpportunity is ERC721, Ownable {
   }
 
   function leaderToken() public view returns (uint256) {
-    if (isLocked) return 0;
-    return _totalSupply - currentPeriod();
+    return periodToTokenId(currentPeriod());
   }
 
-  function isDisqualified (uint256 tokenId) public view returns (bool) {
+  function isEliminated (uint256 tokenId) public view returns (bool) {
     return tokenId > leaderToken();
   }
 
@@ -131,7 +165,6 @@ contract MoneyMakingOpportunity is ERC721, Ownable {
   }
 
   function setUriContract(address _uriContract) public onlyOwner {
-    require(!isLocked, '2');
     uriContract = _uriContract;
     emit BatchMetadataUpdate(0, _totalSupply);
   }
