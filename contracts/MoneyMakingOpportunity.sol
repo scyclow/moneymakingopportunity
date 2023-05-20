@@ -1,34 +1,61 @@
 // SPDX-License-Identifier: MIT
-// contract by steviep.eth
 
+
+/*
+
+ /$$      /$$  /$$$$$$  /$$   /$$ /$$$$$$$$ /$$     /$$       /$$      /$$  /$$$$$$  /$$   /$$ /$$$$$$ /$$   /$$  /$$$$$$
+| $$$    /$$$ /$$__  $$| $$$ | $$| $$_____/|  $$   /$$/      | $$$    /$$$ /$$__  $$| $$  /$$/|_  $$_/| $$$ | $$ /$$__  $$
+| $$$$  /$$$$| $$  \ $$| $$$$| $$| $$       \  $$ /$$/       | $$$$  /$$$$| $$  \ $$| $$ /$$/   | $$  | $$$$| $$| $$  \__/
+| $$ $$/$$ $$| $$  | $$| $$ $$ $$| $$$$$     \  $$$$/        | $$ $$/$$ $$| $$$$$$$$| $$$$$/    | $$  | $$ $$ $$| $$ /$$$$
+| $$  $$$| $$| $$  | $$| $$  $$$$| $$__/      \  $$/         | $$  $$$| $$| $$__  $$| $$  $$    | $$  | $$  $$$$| $$|_  $$
+| $$\  $ | $$| $$  | $$| $$\  $$$| $$          | $$          | $$\  $ | $$| $$  | $$| $$\  $$   | $$  | $$\  $$$| $$  \ $$
+| $$ \/  | $$|  $$$$$$/| $$ \  $$| $$$$$$$$    | $$          | $$ \/  | $$| $$  | $$| $$ \  $$ /$$$$$$| $$ \  $$|  $$$$$$/
+|__/     |__/ \______/ |__/  \__/|________/    |__/          |__/     |__/|__/  |__/|__/  \__/|______/|__/  \__/ \______/
+
+
+
+  /$$$$$$  /$$$$$$$  /$$$$$$$   /$$$$$$  /$$$$$$$  /$$$$$$$$ /$$   /$$ /$$   /$$ /$$$$$$ /$$$$$$$$ /$$     /$$
+ /$$__  $$| $$__  $$| $$__  $$ /$$__  $$| $$__  $$|__  $$__/| $$  | $$| $$$ | $$|_  $$_/|__  $$__/|  $$   /$$/
+| $$  \ $$| $$  \ $$| $$  \ $$| $$  \ $$| $$  \ $$   | $$   | $$  | $$| $$$$| $$  | $$     | $$    \  $$ /$$/
+| $$  | $$| $$$$$$$/| $$$$$$$/| $$  | $$| $$$$$$$/   | $$   | $$  | $$| $$ $$ $$  | $$     | $$     \  $$$$/
+| $$  | $$| $$____/ | $$____/ | $$  | $$| $$__  $$   | $$   | $$  | $$| $$  $$$$  | $$     | $$      \  $$/
+| $$  | $$| $$      | $$      | $$  | $$| $$  \ $$   | $$   | $$  | $$| $$\  $$$  | $$     | $$       | $$
+|  $$$$$$/| $$      | $$      |  $$$$$$/| $$  | $$   | $$   |  $$$$$$/| $$ \  $$ /$$$$$$   | $$       | $$
+ \______/ |__/      |__/       \______/ |__/  |__/   |__/    \______/ |__/  \__/|______/   |__/       |__/
+
+
+by steviep.eth
+*/
 
 
 import "./Dependencies.sol";
-import "hardhat/console.sol";
 
 pragma solidity ^0.8.17;
 
-
-interface IURI {
+interface ITokenURI {
   function tokenURI(uint256 tokenId) external view returns (string memory);
 }
 
-contract MoneyMakingOpportunity is ERC721, Ownable {
-  uint256 constant public FAIR_PRICE = 0.03 ether;
+/// @title Money Making Opportunity
+/// @author steviep.eth
+/// @notice
 
-  uint256 public totalSupply;
+contract MoneyMakingOpportunity is ERC721 {
+  uint256 constant public FAIR_CONTRIBUTION = 0.03 ether;
 
   bool public isLocked = true;
+  bool public uriLocked;
+  uint256 public totalSupply;
   uint256 public beginning;
   uint256 public ending;
-  address public uriContract;
   uint256 public contributors;
+  address public tokenURIContract;
+  address public artist;
 
-
-  mapping(address => uint256) public addrToTokenId;
-  mapping(uint256 => mapping(uint256 => bool)) private _tokenVotes;
-  mapping(uint256 => address) public settlementAddressProposals;
   mapping(address => uint256) public amountPaid;
+  mapping(address => uint256) public addrToTokenId;
+  mapping(uint256 => address) public settlementAddressProposals;
+  mapping(uint256 => mapping(uint256 => bool)) private _tokenVotes;
 
   /// @dev This event emits when the metadata of a token is changed.
   /// So that the third-party platforms such as NFT market could
@@ -41,6 +68,7 @@ contract MoneyMakingOpportunity is ERC721, Ownable {
   event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
 
   constructor() ERC721('Money Making Opportunity', 'MMO') {
+    artist = msg.sender;
     contributors++;
   }
 
@@ -50,23 +78,24 @@ contract MoneyMakingOpportunity is ERC721, Ownable {
 
     if (
       isLocked
-      && originalAmount < FAIR_PRICE
-      && amountPaid[msg.sender] >= FAIR_PRICE
+      && originalAmount < FAIR_CONTRIBUTION
+      && amountPaid[msg.sender] >= FAIR_CONTRIBUTION
     ) {
       addrToTokenId[msg.sender] = contributors;
       contributors++;
 
     } else if (ending > 0) {
-      payable(settlementAddressProposals[leaderToken()]) .send(address(this).balance);
+      payable(settlementAddressProposals[currentWeek()]).transfer(address(this).balance);
     }
   }
 
-  function unlock(address _uriContract) external onlyOwner {
+  function unlock(address _uriContract) external {
+    require(msg.sender == artist, '11');
     require(isLocked, '1');
     isLocked = false;
     beginning = block.timestamp;
+    tokenURIContract = _uriContract;
     totalSupply++;
-    setUriContract(_uriContract);
     _mint(msg.sender, 0);
   }
 
@@ -77,107 +106,102 @@ contract MoneyMakingOpportunity is ERC721, Ownable {
     _mint(msg.sender, addrToTokenId[msg.sender]);
   }
 
-  function castVote(uint256 tokenId, uint256 period, bool vote) external {
+  function castVote(uint256 tokenId, uint256 week, bool vote) external {
     require(ownerOf(tokenId) == msg.sender, '4');
-    require(period >= currentPeriod(), '5');
+    require(week >= currentWeek(), '5');
     require(ending == 0, '9');
+    require(tokenIdToWeek(tokenId) > week, '12');
 
-    _tokenVotes[tokenId][period] = vote;
-    emit MetadataUpdate(tokenId);
+    _tokenVotes[tokenId][week] = vote;
   }
 
-  // function castVotes(uint256[] calldata tokenIds, uint256 period, bool vote) external {
-  //   require(period >= currentPeriod(), '5');
-  //   require(ending == 0, '9');
 
-  //   uint len = tokenIds.length;
-
-  //   for (uint256 i; i < len; i++) {
-  //     uint256 tokenId = tokenIds[i];
-  //     require(ownerOf(tokenId) == msg.sender, '4');
-  //     _tokenVotes[tokenId][period] = vote;
-  //   }
-
-    // emit BatchMetadataUpdate(0, contributors);
-  // }
-
-
-  function commitSettlementAddressProposal(uint256 tokenId, address settlementAddress) external {
+  function proposeSettlementAddress(uint256 week, address settlementAddress) external {
+    uint256 tokenId = weekToTokenId(week);
     require(!isEliminated(tokenId), '6');
     require(ownerOf(tokenId) == msg.sender, '4');
-    require(settlementAddressProposals[tokenId] == address(0), '7');
-    settlementAddressProposals[tokenId] = settlementAddress;
+    require(settlementAddressProposals[week] == address(0), '7');
+    settlementAddressProposals[week] = settlementAddress;
     emit MetadataUpdate(tokenId);
   }
 
 
   function settlePayment() external {
     require(ending == 0, '8');
+    uint256 week = currentWeek();
+    if (week == contributors) require(ownerOf(0) == msg.sender);
 
-    (uint256 yays, uint256 nays) = calculateVotes(currentPeriod());
+    (uint256 yays, uint256 nays) = calculateVotes(week);
 
     require(yays >= nays, '10');
 
     ending = block.timestamp;
-    payable(settlementAddressProposals[leaderToken()]).send(address(this).balance);
+    payable(settlementAddressProposals[week]).transfer(address(this).balance);
+    emit BatchMetadataUpdate(0, contributors);
   }
 
-  function calculateVotes(uint256 period) public view returns (uint256, uint256) {
+  function calculateVotes(uint256 week) public view returns (uint256, uint256) {
     uint256 yays = 1;
     uint256 nays;
-    uint256 tokenId = periodToTokenId(period);
+    uint256 tokenId = weekToTokenId(week);
 
     for (uint256 i = 0; i < tokenId; i++) {
-      if (_tokenVotes[i][period]) yays++;
+      if (_tokenVotes[i][week]) yays++;
       else nays++;
     }
 
     return (yays, nays);
   }
 
-  function tokenIdToPeriod(uint256 tokenId) public view returns (uint256) {
+  function tokenIdToWeek(uint256 tokenId) public view returns (uint256) {
     return contributors - tokenId;
   }
 
-  function periodToTokenId(uint256 period) public view returns (uint256) {
+  function weekToTokenId(uint256 week) public view returns (uint256) {
     if (isLocked) return 0;
-    return contributors - period;
+    return contributors - week;
   }
 
-
-  function currentPeriod() public view returns (uint256) {
+  function currentWeek() public view returns (uint256) {
     if (isLocked) return 0;
     uint256 endTime = ending > 0 ? ending : block.timestamp;
-    uint256 period = 1 + (endTime - beginning) / 1 weeks;
+    uint256 week = 1 + (endTime - beginning) / 1 weeks;
 
-    return period >= contributors ? contributors : period;
+    return week >= contributors ? contributors : week;
   }
 
   function leaderToken() public view returns (uint256) {
-    return periodToTokenId(currentPeriod());
+    return weekToTokenId(currentWeek());
   }
 
   function isEliminated (uint256 tokenId) public view returns (bool) {
     return tokenId > leaderToken();
   }
 
-  function votes(uint256 tokenId, uint256 period) public view returns (bool) {
-    return _tokenVotes[tokenId][period];
+  function votes(uint256 tokenId, uint256 week) public view returns (bool) {
+    if (tokenIdToWeek(tokenId) == week) return true;
+    return _tokenVotes[tokenId][week];
   }
 
 
-
   function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
-    return IURI(uriContract).tokenURI(tokenId);
+    return ITokenURI(tokenURIContract).tokenURI(tokenId);
   }
 
   function exists(uint256 tokenId) external view returns (bool) {
     return _exists(tokenId);
   }
 
-  function setUriContract(address _uriContract) public onlyOwner {
-    uriContract = _uriContract;
+  function setURIContract(address _uriContract) external {
+    require(msg.sender == artist && !uriLocked, '11');
+    tokenURIContract = _uriContract;
     emit BatchMetadataUpdate(0, contributors);
+  }
+
+  function commitURI() external {
+    require(msg.sender == artist, '11');
+    require(!isLocked, '13');
+    uriLocked = true;
   }
 
 
