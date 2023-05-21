@@ -14,7 +14,7 @@ contract MMOMock {
   constructor() {}
 
   function settlementAddressProposals(uint256 week) external view returns (address) {
-    return address(1);
+    return address(0);
   }
 
   function votes(uint256 tokenId, uint256 week) public view returns (bool) {

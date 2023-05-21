@@ -279,15 +279,17 @@ describe('MoneyMakingOpportunity', () => {
       expect(tokenURI3.name).to.equal('Money Making Opportunity #3 (Week 1/4)')
       expect(tokenURI3.external_url).to.equal('https://steviep.xyz/moneymakingopportunity')
       expect(tokenURI3.description.includes('4 participants')).to.equal(true)
-      expect(tokenURI3.attributes.length).to.equal(2)
+      expect(tokenURI3.attributes.length).to.equal(3)
       expect(tokenURI3.attributes.find(a => a.trait_type === 'Opportunity ID').value).to.equal('3')
       expect(tokenURI3.attributes.find(a => a.trait_type === 'Leadership Week').value).to.equal('1')
+      expect(tokenURI3.attributes.find(a => a.trait_type === 'Proposed Settlement Address').value).to.equal('None')
 
       const tokenURI0 = getJsonURI(await MMO.connect(signers[0]).tokenURI(0))
       expect(tokenURI0.name).to.equal('Money Making Opportunity #0 (Week 4/4)')
-      expect(tokenURI0.attributes.length).to.equal(2)
+      expect(tokenURI0.attributes.length).to.equal(3)
       expect(tokenURI0.attributes.find(a => a.trait_type === 'Opportunity ID').value).to.equal('0')
       expect(tokenURI0.attributes.find(a => a.trait_type === 'Leadership Week').value).to.equal('4')
+      expect(tokenURI0.attributes.find(a => a.trait_type === 'Proposed Settlement Address').value).to.equal('None')
 
     })
   })
@@ -716,8 +718,8 @@ describe('MoneyMakingOpportunity', () => {
       const tokenURI3 = getJsonURI(await MMO.connect(signers[3]).tokenURI(3))
       const tokenURI4 = getJsonURI(await MMO.connect(signers[4]).tokenURI(4))
 
-      expect(tokenURI2.attributes.length).to.equal(2)
-      expect(tokenURI2.attributes.find(a => a.trait_type === 'Proposed Settlement Address')).to.equal(undefined)
+      expect(tokenURI2.attributes.length).to.equal(3)
+      expect(tokenURI2.attributes.find(a => a.trait_type === 'Proposed Settlement Address').value).to.equal('None')
 
       expect(tokenURI3.attributes.length).to.equal(3)
       expect(tokenURI3.attributes.find(a => a.trait_type === 'Proposed Settlement Address').value).to.equal(proposedAddr)
@@ -822,11 +824,13 @@ describe('MoneyMakingOpportunity', () => {
       const tokenURI3 = getJsonURI(await MMO.connect(signers[3]).tokenURI(3))
 
 
-      expect(tokenURI0.attributes.length).to.equal(3)
-      expect(tokenURI1.attributes.length).to.equal(3)
+      expect(tokenURI0.attributes.length).to.equal(4)
+      expect(tokenURI1.attributes.length).to.equal(4)
       expect(tokenURI2.attributes.length).to.equal(4)
       expect(tokenURI3.attributes.length).to.equal(4)
 
+      expect(tokenURI0.attributes.find(a => a.trait_type === 'Proposed Settlement Address').value).to.equal('None')
+      expect(tokenURI1.attributes.find(a => a.trait_type === 'Proposed Settlement Address').value).to.equal('None')
       expect(tokenURI2.attributes.find(a => a.trait_type === 'Proposed Settlement Address').value).to.equal(proposedAddr2)
       expect(tokenURI3.attributes.find(a => a.trait_type === 'Proposed Settlement Address').value).to.equal(proposedAddr1)
 

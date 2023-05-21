@@ -49,9 +49,10 @@ contract MMOTokenURI {
 
     bytes memory description = abi.encodePacked(
       '"',
-      'In Money Making Opportunity, ',
+      'Money Making Opportunity (MMO) is a smart contract-based coordination game in which ',
       contributors.toString(),
-      " participants must collaborate in order to split the ETH balance held by the MMO contract. The contract enforces a voting scheme inspired by the Pirate Game: a leader proposes a destination for the contract's ETH balance; participants vote on the proposal; if the proposal is rejected, the leader is eliminated and may no longer vote on proposals.",
+      " participants send 0.03 ETH to the MMO contract, and must then collaborate to distribute the resulting contract balance. MMO is inspired by the Pirate Game: a leader proposes a destination for the contract's balance; participants vote on the proposal; if the proposal is rejected, the leader is eliminated and may no longer vote on proposals. For more information, visit => ",
+      externalURL,
       '"'
     );
 
@@ -128,13 +129,11 @@ contract MMOTokenURI {
     uint256 currentWeek = MMO.currentWeek();
     address settlementAddr = MMO.settlementAddressProposals(week);
 
-    bytes memory settlementAddrProp = settlementAddr != address(0)
-      ? abi.encodePacked(
-        '{"trait_type": "Proposed Settlement Address", "value": "',
-        Strings.toHexString(uint256(uint160(settlementAddr)), 20),
-        '"},'
-        )
-      : abi.encodePacked('');
+    bytes memory settlementAddrProp = abi.encodePacked(
+      '{"trait_type": "Proposed Settlement Address", "value": "',
+      settlementAddr != address(0) ? Strings.toHexString(uint256(uint160(settlementAddr)), 20) : 'None',
+      '"},'
+    );
 
     bytes memory successfulVote = MMO.ending() > 0
       ? abi.encodePacked(

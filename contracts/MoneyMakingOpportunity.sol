@@ -35,9 +35,9 @@ by steviep.eth
 
 
 Money Making Opportunity (MMO) is a smart contract-based collaboration game in which an unbound
-number of participants send 0.03 ETH to the MMO contract, and must then coordinate to distribut the
-resulting contract balance. MMO is inspired by the Pirate Game [1], but modified to work within the
-context of a smart contract with a non specified number of participants.
+number of participants send 0.03 ETH to the MMO contract, and must then coordinate to distribute
+the resulting contract balance. MMO is inspired by the Pirate Game [1], but modified to work within
+the context of a smart contract with a non specified number of participants.
 
 At a high level, the game works as follows:
 
@@ -66,6 +66,23 @@ At a high level, the game works as follows:
   a proposal has succeeded.
 
 [1] https://en.wikipedia.org/wiki/Pirate_game
+
+
+# ERRORS #
+All errors were truncated to integers in order to obfuscate functionality during the contribution phase.
+  1: Cannot take this action because contract is locked
+  2: Cannot take this action because contract is unlocked
+  3: This error doesn't exist because I fucked up
+  4: Only the token owner can call this function
+  5: Cannot vote on weeks that have already passed
+  6: Cannot propose a settlement address because token has already been eliminated
+  7: A settlement address has already been proposed for this token
+  8: Contract has already been settled
+  9: Cannot vote after contract has been settled
+  10: Cannot settle contract because yays < nays
+  11: This action can only be taken by the artist
+  12: Cannot cast votes on tokens assigned to a later week
+
 */
 
 
@@ -189,7 +206,7 @@ contract MoneyMakingOpportunity is ERC721 {
   /// @param tokenId Token ID for vote
   /// @param week Week # for vote
   /// @param vote Vote value
-  /// @dev Votes can be made at any time, but cannot be changed after a proposal has succeeded
+  /// @dev Votes can be made at any time, but cannot be changed once a proposal has been accepted or rejected
   /// @dev Tokens cannot be used to vote for proposals issued by lower token IDs (or higher week #s)
   function castVote(uint256 tokenId, uint256 week, bool vote) external {
     require(ownerOf(tokenId) == msg.sender, '4');

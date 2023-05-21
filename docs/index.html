@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>Money Making Opportunity</title>
 
-  <link rel="shortcut icon" type="image/x-icon" href="./favicon.png">
+  <link rel="shortcut icon" type="image/x-icon" href="./favicon.svg">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <meta name="description" content="Money Making Opportunity">
@@ -17,7 +17,7 @@
   <meta name="twitter:site" content="@steviepxyz">
   <meta property="twitter:description" content="Money Making Opportunity">
 
-  <meta name="og:image" property="og:image" content="https://steviep.xyz/moneymakingopportunity/favicon.png">
+  <meta name="og:image" property="og:image" content="https://steviep.xyz/moneymakingopportunity/favicon.svg">
   <meta name="og:image:alt" content="Money Making Opportunity">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://steviep.xyz/moneymakingopportunity">
@@ -45,13 +45,15 @@
       margin: 0.5em;
     }
 
-    h1 {
+    h1, h2, h3 {
       text-align: center;
+    }
+
+    h1 {
       font-size: 3em;
     }
 
     h2 {
-      text-align: center;
       font-size: 2em;
     }
 
@@ -94,6 +96,14 @@
       font-size: 1em;
     }
 
+    table {
+      margin: auto;
+    }
+
+    section h2 {
+      margin-bottom: 1em;
+    }
+
     .center {
       margin: auto;
       display: flex;
@@ -119,12 +129,34 @@
     .dashboard-section {
       padding: 1em;
       border: 1px solid;
-      margin: 1em 0;
+      margin: 2em 0;
+    }
+
+    .dashboard-section p {
+      font-size: 1em;
+      padding: 0 2.5em;
+      padding-bottom: 1em;
     }
 
     #voteSection input {
       font-size: 1.25em;
       margin-bottom: 0.25em;
+    }
+
+    .nightmode * {
+      color: #fff;
+    }
+
+    .nightmode {
+      background-color: #000;
+    }
+
+    .nightmode button {
+      background-color: #444;
+    }
+    .nightmode input {
+      background-color: #ddd;
+
     }
 
   </style>
@@ -143,7 +175,7 @@
     <section>
 
       <p>
-        Money Making Opportunity (MMO) is a smart contract-based collaboration game in which XXXXXX participants must work together to distribute XXXXXX ETH. MMO is inspired by the <a href="https://en.wikipedia.org/wiki/Pirate_game" target="_blank">Pirate Game</a>, but modified to work an unspecified number of participants within the context of a smart contract. At a high level, the game works as follows:
+        Money Making Opportunity (MMO) is a smart contract-based coordination game in which XXXXXX participants must collaborate to distribute XXXXXX ETH. MMO is inspired by the <a href="https://en.wikipedia.org/wiki/Pirate_game" target="_blank">Pirate Game</a>, but modified to work an unspecified number of participants within the context of a smart contract. At a high level, the game works as follows:
       </p>
 
       <ul>
@@ -175,6 +207,7 @@
     </section>
 
     <section id="walletConnected" style="display: none;">
+      <h3 id="connectedAs"></h3>
 
 
       <section id="claimSection" class="dashboard-section">
@@ -192,6 +225,11 @@
         <table>
           <tbody>
             <tr>
+              <td>Contract Balance:</td>
+              <td id="dashboardContractBalance">0</td>
+            </tr>
+
+            <tr>
               <td>Game State:</td>
               <td id="dashboardGameState">Active</td>
             </tr>
@@ -207,7 +245,7 @@
             </tr>
 
             <tr>
-              <td>Leader Token:</td>
+              <td>Current Leader Token:</td>
               <td id="dashboardLeaderToken">-</td>
             </tr>
 
@@ -236,37 +274,52 @@
 
       <section id="voteSection" class="dashboard-section" style="display: none;">
         <h2>Cast Vote</h2>
-        <div>
-          <input id="voteTokenInput" type="number" placeholder="Token ID">
-        </div>
-        <div>
-          <input id="voteWeekInput" type="number" placeholder="Week #">
-        </div>
 
-        <div style="margin: 0.25em 0; font-size: 1.5em;">
-          <label style="cursor: pointer; margin-right: 1em;">
-            <input id="voteValueYay" type="radio" name="voteValue" value="true">
-            Yay
-          </label>
+        <p>Votes can be made and updated at any point, but cannot be changed once a proposal has been accepted or rejected. Additionally, tokens cannot be used to vote for proposals issued by lower token IDs (or higher week #s). For example, token 10 cannot be used to vote on a proposal made by token 9.</p>
 
-          <label style="cursor: pointer">
-            <input id="voteValueNay" type="radio" name="voteValue" value="false">
-            Nay
-          </label>
+        <div class="center" style="flex-direction: column;">
+          <div>
+            <input id="voteTokenInput" type="number" placeholder="Token ID">
+          </div>
+          <div>
+            <input id="voteWeekInput" type="number" placeholder="Week #">
+          </div>
+
+          <div style="margin: 0.25em 0; font-size: 1.5em;">
+            <label style="cursor: pointer; margin-right: 1em;">
+              <input id="voteValueYay" type="radio" name="voteValue" value="true">
+              Yay
+            </label>
+
+            <label style="cursor: pointer">
+              <input id="voteValueNay" type="radio" name="voteValue" value="false">
+              Nay
+            </label>
+          </div>
+
+          <button id="submitVote" style="font-size: 1.25em; margin-top: 0.5em; ">Vote</button>
         </div>
-
-        <button id="submitVote" style="font-size: 1.25em; ">Vote</button>
       </section>
 
       <section id="proposalSection" class="dashboard-section" style="display: none;">
         <h2>Propose Settlement Address</h2>
-        <div style="margin: 0.25em 0; font-size: 1.25em;">
-          <input id="proposalWeekInput" type="number" placeholder="Week #">
+
+        <p>Each token can only make <strong>one single settlement address proposal</strong>. This proposal can take place at any time prior to the expiration to the token's assigned week. If a token misses its week, then a proposal can no longer be made.</p>
+        <div class="center" style="flex-direction: column;">
+          <div style="margin: 0.25em 0; font-size: 1.25em;">
+            <input id="proposalWeekInput" type="number" placeholder="Week #">
+          </div>
+          <div style="margin: 0.25em 0; font-size: 1.25em;">
+            <input id="proposalAddressInput" type="text" placeholder="Settlement Address">
+          </div>
+          <button id="submitProposal" style="font-size: 1.25em; margin-top: 0.5em; ">Propose</button>
         </div>
-        <div style="margin: 0.25em 0; font-size: 1.25em;">
-          <input id="proposalAddressInput" type="text" placeholder="Settlement Address">
-        </div>
-        <button id="submitProposal" style="font-size: 1.25em; ">Propose</button>
+      </section>
+
+      <section class="dashboard-section">
+        <h2>Settlement</h2>
+        <p>This function will attempt to settle the contract based on the <em>current week's</em> proposed settlement address. Anyone can call this function. Settlement will only be successful if >= 50% of remaining eligible votes vote yay. All votes (except for the proposing token's) are nay by default. A successful settlement will send the entire balance of the MMO contract to the approved settlement address.</p>
+        <button id="submitSettlement" class="center" style="font-size: 1.25em; margin: 0.5em auto;">Settle</button>
       </section>
 
       <section class="dashboard-section">
@@ -304,6 +357,7 @@
   const $walletConnected = $id('walletConnected')
   const $noWeb3Browser = $id('noWeb3Browser')
   const $connectionError = $id('connectionError')
+  const $connectedAs = $id('connectedAs')
 
   const $dashboardGameState = $id('dashboardGameState')
   const $dashboardActiveWeek = $id('dashboardActiveWeek')
@@ -313,6 +367,7 @@
   const $dashboardTokensMinted = $id('dashboardTokensMinted')
   const $dashboardVoteCount = $id('dashboardVoteCount')
   const $dashboardNextWeekTime = $id('dashboardNextWeekTime')
+  const $dashboardContractBalance = $id('dashboardContractBalance')
 
   const $lookupTokenId = $id('lookupTokenId')
   const $submitLookup = $id('submitLookup')
@@ -337,6 +392,8 @@
   const $proposalAddressInput = $id('proposalAddressInput')
   const $submitProposal = $id('submitProposal')
 
+  const $submitSettlement = $id('submitSettlement')
+
 
 
   const env = 'local'
@@ -354,7 +411,6 @@
 
   function triggerTimer(timeLeft, $elem) {
     const with0 = x => x < 10 ? '0' + Math.floor(x) : Math.floor(x)
-    console.log(timeLeft)
     const interval = setInterval(() => {
       timeLeft -= 1
       const days = timeLeft / (24*60*60)
@@ -386,6 +442,7 @@
     'function weekToTokenId(uint256) public view returns (uint256)',
     'function votes(uint256, uint256) public view returns (bool)',
     'function addrToTokenId(address) public view returns (uint256)',
+    'function isEliminated(uint256) public view returns (bool)',
 
     'function unlock(address) external',
     'function claim() external',
@@ -470,7 +527,8 @@
     if (tokenToClaim === 0) {
       $noTokenToClaim.innerHTML = `This address is ineligable to claim a MMO token because it did not send 0.03 ETH to moneymakingopportunity.eth before the start date ${new Date(beginning * 1000)}`
     } else if (tokenAlreadyClaimed) {
-      $tokenAlreadyClaimed.innerHTML = `<h2>You have already claimed token #${tokenToClaim}</h2>`
+      $claimSection.style.display = 'none'
+      // $tokenAlreadyClaimed.innerHTML = `<h2>You have already claimed token #${tokenToClaim}</h2>`
     } else {
       $claimTokenForm.style.display = 'initial'
       $claimText.innerHTML = `<h2>Claim Token #${tokenToClaim}`
@@ -528,7 +586,16 @@
     const leaderTokenOwner = await MMO.connect(signer).exists(leaderToken)
       && await MMO.connect(signer).ownerOf(leaderToken)
 
+    const contractBalance = await provider.getBalance(MMO_CONTRACT)
+    const balanceNum = Number(contractBalance.div(1000000000000).toString()) / 1000000
+    const signerAddress = await signer.getAddress()
 
+
+
+
+    $connectedAs.innerHTML = `Connected as: ${signerAddress}`
+
+    $dashboardContractBalance.innerHTML = `${balanceNum} ETH`
     if (beginning === 0) {
       $dashboardGameState.innerHTML = 'Contribution'
     } else if (ending > 0) {
@@ -538,7 +605,7 @@
     }
 
     if (leaderTokenOwner) {
-      $dashboardLeaderToken.innerHTML = `#${leaderToken} (<a href="https://etherscan.io/address/${leaderTokenOwner}" target="_blank">${truncateAddr(leaderTokenOwner)}</a>)`
+      $dashboardLeaderToken.innerHTML = `#${leaderToken} (owner: <a href="https://etherscan.io/address/${leaderTokenOwner}" target="_blank">${truncateAddr(leaderTokenOwner)}</a>)`
     } else {
       $dashboardLeaderToken.innerHTML = `#${leaderToken} (Unminted)`
     }
@@ -573,6 +640,7 @@
         && await MMO.connect(signer).ownerOf(tokenId)
       const activeWeek = bnToN(await MMO.connect(signer).tokenIdToWeek(tokenId))
       const proposal = await MMO.connect(signer).settlementAddressProposals(activeWeek)
+      const isEliminated = await MMO.connect(signer).isEliminated(tokenId)
       const [yayVotes, nayVotes] = await MMO.connect(signer).calculateVotes(activeWeek)
 
       console.log(tokenId, proposal)
@@ -585,6 +653,11 @@
           </tr>
 
           <tr>
+            <td>Is Eliminated?</td>
+            <td>${isEliminated}</td>
+          </tr>
+
+          <tr>
             <td>Owner</td>
             <td>${tokenOwner
               ? `<a href="https://etherscan.io/address/${tokenOwner}" target="_blank">${truncateAddr(tokenOwner)}</a>`
@@ -593,7 +666,7 @@
           </tr>
 
           <tr>
-            <td>Active Week</td>
+            <td>Leader Week</td>
             <td>${activeWeek}</td>
           </tr>
 
@@ -614,7 +687,15 @@
     }
   }
 
+  $submitSettlement.onclick = async () => {
+    await MMO.connect(signer).settlePayment()
+  }
+
 })()
+
+
+  const  hours = new Date().getHours();
+  if (hours <= 5 || hours >= 22) document.body.className = 'nightmode'
 
 </script>
 </html>
