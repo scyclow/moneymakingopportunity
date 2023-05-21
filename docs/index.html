@@ -166,7 +166,7 @@
     <h1>Money Making Opportunity</h1>
     <nav class="center">
       <a href="https://etherscan.io/address/0x41d3d86a84c8507a7bc14f2491ec4d188fa944e7" target="_blank">Etherscan</a>
-      <a href="https://opensea.io/collection/moneymakingopportunity" target="_blank">Opensea</a>
+      <a href="https://opensea.io/collection/money-making-opportunity" target="_blank">Opensea</a>
       <a href="https://discord.gg/vbFNpkQW5m" target="_blank">Discord</a>
     </nav>
   </header>
@@ -175,19 +175,19 @@
     <section>
 
       <p>
-        Money Making Opportunity (MMO) is a smart contract-based coordination game in which XXXXXX participants must collaborate to distribute XXXXXX ETH. MMO is inspired by the <a href="https://en.wikipedia.org/wiki/Pirate_game" target="_blank">Pirate Game</a>, but modified to work an unspecified number of participants within the context of a smart contract. At a high level, the game works as follows:
+        Money Making Opportunity (MMO) is a smart contract-based coordination game in which 1474 participants must collaborate to distribute 44.56 ETH. MMO is inspired by the <a href="https://en.wikipedia.org/wiki/Pirate_game" target="_blank">Pirate Game</a>, but modified to work an unspecified number of participants within the context of a smart contract. At a high level, the game works as follows:
       </p>
 
       <ul>
         <li>Participants blindly send 0.03 ETH to <a href="https://etherscan.io/address/0x41d3d86a84c8507a7bc14f2491ec4d188fa944e7" target="_blank">moneymakingopportunity.eth</a>, which sends the funds to the MMO contract.</li>
         <li>The artist starts the game. After this point, sending ETH to moneymakingopportunity.eth does not allow the sender to participate in Money Making Opportunity.</li>
         <li>Once the game is started, all participants who contributed at least 0.03 ETH before the starting time may claim an MMO NFT.</li>
-        <li>Every week for XXXXXX weeks, one token is designated as the "Leader".</li>
+        <li>Every week for 1474 weeks, one token is designated as the "Leader".</li>
         <li>The Leader can propose a "Settlement Address" (i.e., an address for which the MMO contract balance can be sent to).</li>
         <li>The Settlement Address can by an EOA, a smart contract that splits the balance according to custom logic, etc.</li>
         <li>If at least 50% of eligible participants vote in favor of the active week's proposal, the balance can be then be sent to that contract.</li>
         <li>If a proposal is not successfully settle within one week, then that week's Leader can no longer vote on future proposals.</li>
-        <li>Leadership order is determined by reverse order of token id. For example, the owner of token #XXXXXX is the Leader for week 1, and the owner of token #0 is the Leader for week XXXXXX.</li>
+        <li>Leadership order is determined by reverse order of token id. For example, the owner of token #1474 is the Leader for week 1, and the owner of token #0 is the Leader for week 1474.</li>
         <li>MMO tokens may be traded as normal NFTs.</li>
         <li>Each token may make <strong>one single proposal for the Settlement Address</strong>. This proposal can be made at any time.</li>
         <li>Tokens can vote on the proposal for any week at any time. These votes can no longer be changed once a proposal has been acceptted.</li>
@@ -396,7 +396,7 @@
 
 
 
-  const env = 'local'
+  const env = 'mainnet'
 
 
   const MMO_CONTRACT = {
@@ -525,7 +525,7 @@
 
 
     if (tokenToClaim === 0) {
-      $noTokenToClaim.innerHTML = `This address is ineligable to claim a MMO token because it did not send 0.03 ETH to moneymakingopportunity.eth before the start date ${new Date(beginning * 1000)}`
+      $noTokenToClaim.innerHTML = `This address is ineligable to claim a MMO token because it did not send at least 0.03 ETH to moneymakingopportunity.eth before the start date of ${new Date(beginning * 1000)}`
     } else if (tokenAlreadyClaimed) {
       $claimSection.style.display = 'none'
       // $tokenAlreadyClaimed.innerHTML = `<h2>You have already claimed token #${tokenToClaim}</h2>`

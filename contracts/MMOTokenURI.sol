@@ -49,9 +49,9 @@ contract MMOTokenURI {
 
     bytes memory description = abi.encodePacked(
       '"',
-      'Money Making Opportunity (MMO) is a smart contract-based coordination game in which ',
+      'Money Making Opportunity (MMO) is a smart contract-based collaboration game in which ',
       contributors.toString(),
-      " participants send 0.03 ETH to the MMO contract, and must then collaborate to distribute the resulting contract balance. MMO is inspired by the Pirate Game: a leader proposes a destination for the contract's balance; participants vote on the proposal; if the proposal is rejected, the leader is eliminated and may no longer vote on proposals. For more information, visit => ",
+      " participants send 0.03 ETH to the MMO contract, and must then negotiate and coordinate to distribute the resulting contract balance. MMO is inspired by the Pirate Game: a leader proposes a destination for the contract's balance; participants vote on the proposal; if the proposal is rejected, the leader is eliminated and may no longer vote on proposals. For more information, visit => ",
       externalURL,
       '"'
     );

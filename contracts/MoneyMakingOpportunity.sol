@@ -47,7 +47,8 @@ At a high level, the game works as follows:
   allow the sender to participate in Money Making Opportunity.
 - Once the game is started, all participants who contributed at least 0.03 ETH before the starting
   time may claim an MMO NFT.
-- Every week for XXXXXX weeks, one token is designated as the "Leader".
+- Every week, one token is designated as the "Leader".
+- This continues until all tokens have been the Leader.
 - The Leader can propose a "Settlement Address" (i.e., an address for which the MMO contract balance
   can be sent to).
 - The Settlement Address can by an EOA, a smart contract that splits the balance according to custom

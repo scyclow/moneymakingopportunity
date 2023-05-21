@@ -8,7 +8,7 @@ pragma solidity ^0.8.17;
 
 contract MMOMock {
   uint256 public contributors = 50;
-  uint256 public ending = 1;
+  uint256 public ending = 0;
   uint256 public currentWeek = 49;
 
   constructor() {}
