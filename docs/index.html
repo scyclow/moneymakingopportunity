@@ -579,7 +579,7 @@
     const ending = bnToN(await MMO.connect(signer).ending())
     const leaderToken = await MMO.connect(signer).leaderToken()
     const currentWeek = bnToN(await MMO.connect(signer).currentWeek())
-    const proposal = await MMO.connect(signer).settlementAddressProposals(leaderToken)
+    const proposal = await MMO.connect(signer).settlementAddressProposals(currentWeek)
     const [yayVotes, nayVotes] = await MMO.connect(signer).calculateVotes(currentWeek)
     const contributors = await MMO.connect(signer).contributors()
     const totalMinted = await MMO.connect(signer).totalSupply()
