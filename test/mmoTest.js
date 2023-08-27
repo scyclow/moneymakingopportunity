@@ -973,8 +973,27 @@ describe.only('MMOProp15', () => {
     MMO15WP = await MMO15WPFactory.deploy()
     await MMO15WP.deployed()
 
+    const MMOProposalInfoFactory = await ethers.getContractFactory('MMOProposalInfo', artist)
+    MMOProposalInfo = await MMOProposalInfoFactory.deploy()
+    await MMOProposalInfo.deployed()
+
     await time.increase(time.duration.weeks(1))
     await time.increase(time.duration.hours(1))
+  })
+
+  describe.only('ProposalInfo', () => {
+    it('works', async () => {
+      await artist.sendTransaction({
+        to: proposer.address,
+        value: ethers.utils.parseEther('0.1')
+      })
+
+      await MMOProposalInfo.connect(proposer).updateProposalInfo(1459, 'www.whitepaper.com', 'here is the white paper')
+
+      const [href, str] = await MMOProposalInfo.tokenIdToInfo(1459)
+      expect(href).to.equal('www.whitepaper.com')
+      expect(str).to.equal('here is the white paper')
+    })
   })
 
   describe('Proposal', () => {

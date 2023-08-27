@@ -166,7 +166,7 @@
     <h1>Money Making Opportunity</h1>
     <nav class="center">
       <a href="https://etherscan.io/address/0x41d3d86a84c8507a7bc14f2491ec4d188fa944e7" target="_blank">Etherscan</a>
-      <a href="https://opensea.io/collection/money-making-opportunity" target="_blank">Opensea</a>
+      <a href="https://blur.io/collection/0x41d3d86a84c8507a7bc14f2491ec4d188fa944e7" target="_blank">Blur</a>
       <a href="https://discord.gg/vbFNpkQW5m" target="_blank">Discord</a>
     </nav>
   </header>
@@ -175,7 +175,7 @@
     <section>
 
       <p>
-        Money Making Opportunity (MMO) is a smart contract-based coordination game in which 1474 participants must collaborate to distribute 44.56 ETH. MMO is inspired by the <a href="https://en.wikipedia.org/wiki/Pirate_game" target="_blank">Pirate Game</a>, but modified to work an unspecified number of participants within the context of a smart contract. At a high level, the game works as follows:
+        Money Making Opportunity (MMO) is a smart contract-based coordination game in which 1474 participants must collaborate to distribute 45.736981 ETH. MMO is inspired by the <a href="https://en.wikipedia.org/wiki/Pirate_game" target="_blank">Pirate Game</a>, but modified to work an unspecified number of participants within the context of a smart contract. At a high level, the game works as follows:
       </p>
 
       <ul>
@@ -212,7 +212,7 @@
 
       <section id="claimSection" class="dashboard-section">
         <div id="tokenAlreadyClaimed"></div>
-        <div id="noTokenToClaim" class="error"></div>
+        <div id="noTokenToClaim"></div>
         <div id="claimTokenForm" style="display: none;">
           <h3 id="claimText"></h3>
           <button id="submitClaim" class="center" style="font-size: 1.25em; margin: 0.5em auto;">Claim</button>
@@ -222,6 +222,7 @@
 
       <section class="dashboard-section">
         <h2>Dashboard</h2>
+        <div id="proposalInfo"></div>
         <table>
           <tbody>
             <tr>
@@ -270,6 +271,7 @@
             </tr>
           </tbody>
         </table>
+        <div id="leaderTokenSVG" class="center"></div>
       </section>
 
       <section id="voteSection" class="dashboard-section" style="display: none;">
@@ -316,6 +318,24 @@
         </div>
       </section>
 
+      <section id="proposalInfoSection" class="dashboard-section" style="display: none;">
+        <h2>Add Proposal Info</h2>
+
+        <p>Each token can add publish information about their proposal to a designated smart contract. When that token's week is active, the info will be displayed on this website</p>
+        <div class="center" style="flex-direction: column;">
+          <div style="margin: 0.25em 0; font-size: 1.25em;">
+            <input id="proposalInfoWeekInput" type="number" placeholder="Week #">
+          </div>
+          <div style="margin: 0.25em 0; font-size: 1.25em;">
+            <input id="proposalInfoDisplayTextInput" type="text" placeholder="Display Text">
+          </div>
+          <div style="margin: 0.25em 0; font-size: 1.25em;">
+            <input id="proposalInfoHrefInput" type="text" placeholder="href">
+          </div>
+          <button id="submitInfo" style="font-size: 1.25em; margin-top: 0.5em; ">Submit Info</button>
+        </div>
+      </section>
+
       <section class="dashboard-section">
         <h2>Settlement</h2>
         <p>This function will attempt to settle the contract based on the <em>current week's</em> proposed settlement address. Anyone can call this function. Settlement will only be successful if >= 50% of remaining eligible votes vote yay. All votes (except for the proposing token's) are nay by default. A successful settlement will send the entire balance of the MMO contract to the approved settlement address.</p>
@@ -334,6 +354,8 @@
         </table>
 
         <table id="tokenLookupTable"></table>
+
+        <div id="tokenLookupURI" class="center"></div>
       </section>
 
     </section>
@@ -394,6 +416,16 @@
 
   const $submitSettlement = $id('submitSettlement')
 
+  const $proposalInfoSection = $id('proposalInfoSection')
+  const $proposalInfoWeekInput = $id('proposalInfoWeekInput')
+  const $proposalInfoDisplayTextInput = $id('proposalInfoDisplayTextInput')
+  const $proposalInfoHrefInput = $id('proposalInfoHrefInput')
+  const $submitInfo = $id('submitInfo')
+
+  const $proposalInfo = $id('proposalInfo')
+  const $leaderTokenSVG = $id('leaderTokenSVG')
+  const $tokenLookupURI = $id('tokenLookupURI')
+
 
 
   const env = 'mainnet'
@@ -404,10 +436,23 @@
     mainnet: '0x41d3d86a84c8507A7Bc14F2491ec4d188FA944E7'
   }[env]
 
+  const MMO_PROPOSAL_INFO_CONTRACT = {
+    mainnet: '0x61618cAe4fF760fF67F440445E843E4b44bc7F12'
+  }[env]
+
 
   const bnToN = bn => Number(bn.toString())
   const truncateAddr = addr => addr.slice(0, 5) + '...' + addr.slice(-3)
 
+  const utf8Clean = raw => raw.replace(/data.*utf8,/, '')
+  const b64Clean = raw => raw.replace(/data.*,/, '')
+  const b64Decode = raw => atob(b64Clean(raw), 'base64').toString('utf8')
+  const getSVG = rawURI => b64Decode(JSON.parse(utf8Clean(rawURI)).image)
+  const displayTokenSVG = rawURI => `
+    <div style="width: 400px; max-width: 100%; border: 2px solid; margin-top: 1em; display: inherit;">
+      ${getSVG(rawURI)}
+    </div>
+    `
 
   function triggerTimer(timeLeft, $elem) {
     const with0 = x => x < 10 ? '0' + Math.floor(x) : Math.floor(x)
@@ -449,7 +494,15 @@
     'function castVote(uint256, uint256, bool) external',
     'function proposeSettlementAddress(uint256, address) external',
     'function settlePayment() external',
+    'function tokenURI(uint256 tokenId) external view returns (string)'
   ]
+
+  const ProposalInfo = '(string memory proposalHref, string memory proposalStr)'
+  const mmoProposalInfoABI = [
+    `function tokenIdToInfo(uint256) external view returns ${ProposalInfo}`,
+    'function updateProposalInfo(uint256 tokenId, string href, string str) external'
+  ]
+
 
 
 
@@ -469,8 +522,29 @@
     return
   }
 
+  async function formatAddr(addr, truncate=true) {
+    if (window.provider) {
+      try {
+        const ens = await provider.lookupAddress(addr)
+        if (ens.slice(-4) === '.eth') {
+          return ens.length > 23
+            ? ens.slice(0, 23) + '...'
+            : ens
+        } else {
+          return truncate ? truncateAddr(addr) : addr
+        }
+      } catch (e) {
+        console.log(e)
+        return truncate ? truncateAddr(addr) : addr
+      }
+    } else {
+      return truncateAddr(addr)
+    }
+  }
+
 
   const MMO = new ethers.Contract(MMO_CONTRACT, mmoABI, provider)
+  const MMOProposalInfo = new ethers.Contract(MMO_PROPOSAL_INFO_CONTRACT, mmoProposalInfoABI, provider)
 
   const isConnected = async () => {
     if (!isEthBrowser) return false
@@ -570,6 +644,18 @@
         const addr = $proposalAddressInput.value
         await MMO.connect(signer).proposeSettlementAddress(week, addr)
       }
+
+      $proposalInfoSection.style.display = 'block'
+      $submitInfo.onclick = async () => {
+        const week = Number($proposalInfoWeekInput.value)
+
+        const tokenId = bnToN(await MMO.connect(signer).weekToTokenId(week))
+
+        const href = $proposalInfoHrefInput.value
+        const str = $proposalInfoDisplayTextInput.value
+
+        await MMOProposalInfo.connect(signer).updateProposalInfo(tokenId, href, str)
+      }
     }
   }
 
@@ -591,6 +677,15 @@
     const signerAddress = await signer.getAddress()
 
 
+    const leaderTokenSVG = displayTokenSVG(await MMO.connect(signer).tokenURI(leaderToken))
+
+
+    const [proposalHref, proposalStr] = await MMOProposalInfo.connect(signer).tokenIdToInfo(leaderToken)
+
+    const proposalInfo = proposalStr && proposalHref
+      ? `<a href="${proposalHref}" target="_blank" rel="nofollow">${proposalStr}</a>`
+      : proposalStr
+
 
 
     $connectedAs.innerHTML = `Connected as: ${signerAddress}`
@@ -604,8 +699,12 @@
       $dashboardGameState.innerHTML = 'Active'
     }
 
+    $proposalInfo.innerHTML = proposalInfo ? `<h1 style="margin: 1em 0">${proposalInfo}</h1>` : ''
+
+    $leaderTokenSVG.innerHTML = leaderTokenSVG
+
     if (leaderTokenOwner) {
-      $dashboardLeaderToken.innerHTML = `#${leaderToken} (owner: <a href="https://etherscan.io/address/${leaderTokenOwner}" target="_blank">${truncateAddr(leaderTokenOwner)}</a>)`
+      $dashboardLeaderToken.innerHTML = `#${leaderToken} (owner: <a href="https://etherscan.io/address/${leaderTokenOwner}" target="_blank">${await formatAddr(leaderTokenOwner, true)}</a>)`
     } else {
       $dashboardLeaderToken.innerHTML = `#${leaderToken} (Unminted)`
     }
@@ -642,48 +741,67 @@
       const proposal = await MMO.connect(signer).settlementAddressProposals(activeWeek)
       const isEliminated = await MMO.connect(signer).isEliminated(tokenId)
       const [yayVotes, nayVotes] = await MMO.connect(signer).calculateVotes(activeWeek)
+      const [proposalHref, proposalStr] = await MMOProposalInfo.connect(signer).tokenIdToInfo(tokenId)
 
-      console.log(tokenId, proposal)
+      const proposalInfo = proposalStr && proposalHref
+        ? `<a href="${proposalHref}" target="_blank" rel="nofollow">${proposalStr}</a>`
+        : proposalStr
+
 
       $tokenLookupTable.innerHTML = `
-        <thead>
-          <tr>
-            <td>Token ID</td>
-            <td>${tokenId}</td>
-          </tr>
+        <div>
+          <thead>
+            <tr>
+              <td>Token ID</td>
+              <td>${tokenId}</td>
+            </tr>
 
-          <tr>
-            <td>Is Eliminated?</td>
-            <td>${isEliminated}</td>
-          </tr>
+            <tr>
+              <td>Is Eliminated?</td>
+              <td>${isEliminated}</td>
+            </tr>
 
-          <tr>
-            <td>Owner</td>
-            <td>${tokenOwner
-              ? `<a href="https://etherscan.io/address/${tokenOwner}" target="_blank">${truncateAddr(tokenOwner)}</a>`
-              : 'Unminted'
-            }</td>
-          </tr>
+            <tr>
+              <td>Owner</td>
+              <td>${tokenOwner
+                ? `<a href="https://etherscan.io/address/${tokenOwner}" target="_blank">${await formatAddr(tokenOwner, true)}</a>`
+                : 'Unminted'
+              }</td>
+            </tr>
 
-          <tr>
-            <td>Leader Week</td>
-            <td>${activeWeek}</td>
-          </tr>
+            <tr>
+              <td>Leader Week</td>
+              <td>${activeWeek}</td>
+            </tr>
 
-          <tr>
-            <td>Propsed Settlement Address</td>
-            <td>${proposal === ethers.constants.AddressZero
-              ? 'None'
-              : `<a href="https://etherscan.io/address/${proposal}" target="_blank">${truncateAddr(proposal)}</a>`
-            }</td>
-          </tr>
+            <tr>
+              <td>Propsed Settlement Address</td>
+              <td>${proposal === ethers.constants.AddressZero
+                ? 'None'
+                : `<a href="https://etherscan.io/address/${proposal}" target="_blank">${truncateAddr(proposal)}</a>`
+              }</td>
+            </tr>
 
-          <tr>
-            <td>Votes (Yay - Nay)</td>
-            <td>${yayVotes} - ${nayVotes}</td>
-          </tr>
-        </thead>
+            <tr>
+              <td>Votes (Yay - Nay)</td>
+              <td>${yayVotes} - ${nayVotes}</td>
+            </tr>
+
+            ${
+              proposalInfo
+                ? `
+                  <tr>
+                    <td>Proposal Info</td>
+                    <td>${proposalInfo}</td>
+                  </tr>
+                `
+                : ''
+            }
+          </thead>
+        </div>
       `
+
+      $tokenLookupURI.innerHTML = displayTokenSVG(await MMO.connect(signer).tokenURI(tokenId))
     }
   }
 
