@@ -1,6 +1,7 @@
 const { expect, use } = require('chai')
 const { ethers, waffle } = require('hardhat')
 const { expectRevert, time, snapshot } = require('@openzeppelin/test-helpers')
+const prop15Voters = require('./prop15Voters')
 
 
 
@@ -30,7 +31,7 @@ const safeTransferFrom = 'safeTransferFrom(address,address,uint256)'
 
 describe('MoneyMakingOpportunity', () => {
   let MMO
-  let signers, artist, contributor1, contributor2, contributor3, contributor4
+  let signers, banker, artist, contributor1, contributor2, contributor3, contributor4
 
   beforeEach(async () => {
     signers = await ethers.getSigners()
@@ -942,5 +943,147 @@ describe('MoneyMakingOpportunity', () => {
       await MMO.connect(artist).unlock(MMOTokenURI.address)
       await MMO.connect(artist).commitURI()
     })
+  })
+})
+
+describe.only('MMOProp15', () => {
+  let MMO, MMOProp15, MMO15WP
+  let signers, artist, proposer
+
+  beforeEach(async () => {
+    signers = await ethers.getSigners()
+    artist = await ethers.getImpersonatedSigner('0x47144372eb383466D18FC91DB9Cd0396Aa6c87A4')
+    proposer = await ethers.getImpersonatedSigner('0x8D55ccAb57f3Cba220AB3e3F3b7C9F59529e5a65')
+
+    await Promise.all(times(10, i => artist.sendTransaction({
+      to: signers[i+1].address,
+      value: ethers.utils.parseEther('0.05')
+    })))
+
+
+    const MMOFactory = await ethers.getContractFactory('MoneyMakingOpportunity', artist)
+    MMO = await MMOFactory.attach('0x41d3d86a84c8507A7Bc14F2491ec4d188FA944E7')
+
+
+    const MMOProp15Factory = await ethers.getContractFactory('MMOProp15', artist)
+    MMOProp15 = await MMOProp15Factory.deploy()
+    await MMOProp15.deployed()
+
+    const MMO15WPFactory = await ethers.getContractFactory('MMOProp15WhitePaper', artist)
+    MMO15WP = await MMO15WPFactory.deploy()
+    await MMO15WP.deployed()
+
+    await time.increase(time.duration.weeks(1))
+    await time.increase(time.duration.hours(1))
+  })
+
+  describe('Proposal', () => {
+    it('should let MMO settle after x yay votes', async () => {
+      expect(await MMO.currentWeek()).to.equal(15)
+      await artist.sendTransaction({
+        to: proposer.address,
+        value: ethers.utils.parseEther('0.1')
+      })
+
+      await MMO.connect(proposer).proposeSettlementAddress(15, MMOProp15.address)
+
+      const balanceMap = {}
+
+      for (var i = 0; i < 750; i++) {
+        const voter = prop15Voters[i]
+
+        // #935 is locked in a contract
+        if (voter.tokenId === 935) continue
+
+        const signer = await ethers.getImpersonatedSigner(voter.address)
+
+        if (i) await artist.sendTransaction({
+          to: signer.address,
+          value: ethers.utils.parseEther('0.031')
+        })
+
+        await MMO.connect(signer).castVote(voter.tokenId, 15, true)
+
+        balanceMap[voter.address] = await ethers.provider.getBalance(voter.address)
+      }
+
+      balanceMap[proposer.address] = await ethers.provider.getBalance(proposer.address)
+
+      const originalMMOBalance = num(await ethers.provider.getBalance(MMO.address))
+
+      await MMO.connect(artist).settlePayment()
+
+      const updatedMMOBalance = num(await ethers.provider.getBalance(MMO.address))
+      const prop15Balance = num(await ethers.provider.getBalance(MMOProp15.address))
+
+      expect(updatedMMOBalance).to.equal(0)
+      expect(prop15Balance).to.equal(originalMMOBalance)
+
+      const nayVoter = await ethers.getImpersonatedSigner(await MMO.ownerOf(1441))
+
+
+      await expectRevert(
+        MMOProp15.connect(nayVoter).withdraw(1441),
+        'MMO token did not vote yay for Prop15'
+      )
+
+      await expectRevert(
+        MMOProp15.connect(proposer).withdraw(0),
+        'Signer does not own MMO token'
+      )
+
+
+      const originalArtistBalance = num(await ethers.provider.getBalance(artist.address))
+      await MMOProp15.connect(artist).withdraw(0)
+      const updatedArtistBalance = num(await ethers.provider.getBalance(artist.address))
+
+      await expectRevert(
+        MMOProp15.connect(artist).withdraw(0),
+        'MMO token has already been redeemed',
+      )
+
+      expect(updatedArtistBalance - 0.0435).to.be.closeTo(originalArtistBalance, 0.005)
+
+      const originalProposerBalance = num(await ethers.provider.getBalance(proposer.address))
+
+      await MMOProp15.connect(proposer).withdraw(1459)
+
+      const updatedProposerBalance = num(await ethers.provider.getBalance(proposer.address))
+
+      expect(updatedProposerBalance - 14.025481).to.be.closeTo(originalProposerBalance, 0.005)
+
+
+      for (var i = 1; i < 730; i++) {
+        const voter = prop15Voters[i]
+
+        // #935 is locked in a contract
+        if (voter.tokenId === 935) continue
+
+
+        const originalBalance = num(await ethers.provider.getBalance(voter.address))
+        const signer = await ethers.getImpersonatedSigner(voter.address)
+
+        try {
+          await artist.sendTransaction({
+            to: signer.address,
+            value: ethers.utils.parseEther('0.031')
+          })
+
+          await MMOProp15.connect(signer).withdraw(voter.tokenId)
+
+          const updatedBalance = num(await ethers.provider.getBalance(voter.address))
+          expect(updatedArtistBalance - 0.0435).to.be.closeTo(originalArtistBalance, 0.005)
+        } catch (e) {
+          console.log(e)
+          console.log(i, voter)
+        }
+      }
+    })
+  })
+
+  describe('WhitePaper', () => {
+    it('should let the 0 MMO owner update tokenURI')
+    it('should only allow the yay voters of Prop15 to mint')
+    it('minting should adjust totalSupply')
   })
 })

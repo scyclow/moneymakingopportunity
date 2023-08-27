@@ -18,8 +18,13 @@ module.exports = {
     hardhat: {
       forking: {
         url: `https://mainnet.infura.io/v3/${STUFF.INFURA_KEY}`,
-        blockNumber: 17274295,
+        blockNumber: 17999809,
       },
+
+      mining: {
+        auto: true,
+        interval: 12
+      }
     },
 
     mumbai: {
@@ -36,6 +41,7 @@ module.exports = {
     },
 
   },
+
 
   gasReporter: {
     currency: 'USD',

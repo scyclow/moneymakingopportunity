@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>MMO Week 15 Proposal [White Paper]</title>
+
+  <link rel="shortcut icon" type="image/x-icon" href="./favicon.svg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="description" content="MMO Week 15 Proposal [White Paper]">
+  <meta name="keywords" content="money making opportunity proposal 15 white paper, money making opportunity proposal, money making opportunity, money, making, moneymaking, opportunity, prop 15, prop15, proposal, 15, crypto, ethereum, bitcoin, game theory, pirate game, steviep, steve pikelny, pikelny">
+
+  <meta name="twitter:image" content="https://steviep.xyz/moneymakingopportunity/prop15.svg">
+  <meta name="twitter:image:alt" content="MMO Week 15 Proposal [White Paper]">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:creator" content="@steviepxyz">
+  <meta name="twitter:site" content="@steviepxyz">
+  <meta property="twitter:description" content="MMO Week 15 Proposal [White Paper]">
+
+  <meta name="og:image" property="og:image" content="https://steviep.xyz/moneymakingopportunity/favicon.svg">
+  <meta name="og:image:alt" content="MMO Week 15 Proposal [White Paper]">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://steviep.xyz/moneymakingopportunity">
+  <meta property="og:title" content="MMO Week 15 Proposal [White Paper]">
+  <meta property="og:site_name" content="MMO Week 15 Proposal [White Paper]">
+  <meta property="og:description" content="MMO Week 15 Proposal [White Paper]">
+  <style type="text/css">
+    * {
+      padding: 0;
+      margin: 0;
+      font-family: sans-serif;
+    }
+
+    body {
+      background: #fff;
+    }
+
+    .center {
+      display: flex;
+      justify-content: center;
+    }
+
+    main {
+      padding: 1em;
+      max-width: 500px;
+      margin: auto;
+    }
+
+    h1, h2 {
+      text-align: center;
+      margin: 0.5em 0;
+    }
+
+    p {
+      text-align: justify;
+      line-height: 1.4;
+    }
+
+    p + p {
+      margin: 1em auto;
+    }
+
+    td + td {
+      text-align: right;
+      margin-left: 0.25em;
+      padding: 0.1em;
+    }
+
+    thead {
+      font-weight: bold;
+      text-decoration: underline;
+    }
+
+    table {
+      margin: 0.5em auto;
+    }
+
+    img {
+      width: 600px;
+      max-width: 100%;
+    }
+
+    p + img {
+      margin: 1em 0;
+      border: 1px solid;
+    }
+
+    blockquote {
+      font-family: monospace;
+      padding: 1em;
+      background-color: #ddd;
+      margin: 1em 0;
+    }
+
+    section {
+      margin: 2em 0;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1em;
+
+    }
+  </style>
+
+</head>
+<body>
+
+  <header>
+    <div class="center">
+      <img src="./prop15.svg">
+    </div>
+  </header>
+
+  <main>
+    <h1>Money Making Opportunity - Week 15 Proposal White Paper</h1>
+    <p>Executive Summary - Utilizing a novel insight regarding the equilibrium of the Pirate Game when played on a blockchain, the following solution is proposed for week 15: The first 729 responding yay votes receive a 0.0435 ETH payment. Additionally, all yay votes will be able to mint this white paper as an NFT. This paper proves that this is the optimal solution given all present constraints.</p>
+
+    <section>
+      <h2>Motivation</h2>
+      <p>As of this writing, Money Making Opportunity (MMO) is currently in its 15th week, and its contract contains 45.736981 ETH. In the previous 14 weeks there have been numerous proposals, but none have come close to capturing a quorum of the vote. In fact, only three proposals have garnered a single vote:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <td>Week</td>
+            <td>Yays</td>
+            <td>Nays</td>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr>
+            <td>1473</td>
+            <td>37</td>
+            <td>1437</td>
+          </tr>
+
+          <tr>
+            <td>1472</td>
+            <td>7</td>
+            <td>1466</td>
+          </tr>
+
+          <tr>
+            <td>1468</td>
+            <td>2</td>
+            <td>1467</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>While each proposal had compelling properties, they all failed to derive an optimal solution through pursuing a game theory-driven process. At the current rate, MMO may very will resolve itself in 28 years, at which point many participants may no longer be living.</p>
+
+      <p>This proposal, while simple, draws on the natural equilibrium of incentives presented by a blockchain-based Pirate Game. The simple fact that a first-come-first-serve equilibrium has been found implies that all participants are incentiviezed to vote yay as fast as possible. All participants who abstain from voting would otherwise be disadvantaged.</p>
+    </section>
+
+    <section>
+      <h2>Justification</h2>
+      <p>The classic Pirate game has a fairly straightforward equilibrium[<a href="https://en.wikipedia.org/wiki/Pirate_game#The_result" target="_blank">1</a>]: the highest ranking pirate (pirate 1) gets 98 coins, while pirates 3 and 5 get one coin each. The following matrix helps illustrate this resolution, where each row corresponds to the payout of a specific pirate and each column corresponds to the proposal round. It's easiest to understand the solution going backwards, so the round with two pirates is round a, the round with three pirates is b, and so forth.</p>
+
+      <img src="./1.png">
+
+      <p>Even though the above solution only accounts for a game with 5 pirates, one could imagine a similar solution for some arbitrary number of pirates. Extending the crew to 14 pirates would yield a similar outcome. Wikipedia would suggest that Pirate 1 would get 94 gold coins, and each odd-numbered pirates would get 1 coin. This proposal would net 7 votes along with the captain's tie breaker. </p>
+
+      <img src="./2.png">
+
+      <p>However, a seemingly small implementation detail in MMO completely changes the incentive structure. Once a proposal is made, a pirate cannot go back on their word. In other words, each proposal is a blood oath. </p>
+
+      <p>Thomas Schelling's philosophy of game theory has been summed up by Michael Kinsley with the following thought experiment:</p>
+
+      <blockquote cite="https://www.washingtonpost.com/archive/opinions/2005/10/12/a-nobel-laureate-whos-got-game/8229a4c6-cf89-40b9-b708-16a5bc8b667e/">So you're standing at the edge of a cliff, chained by the ankle to someone else. You'll be released, and one of you will get a large prize, as soon as the other gives in. How do you persuade the other guy to give in, when the only method at your disposal -- threatening to push him off the cliff -- would doom you both? Answer: You start dancing, closer and closer to the edge.</blockquote>
+
+      <p>In other words, sometimes the most rational strategy is to behave irrationally. So how does this apply to the pirate game? Taking a look at round b in the above matrix, it's clear that the only reason Pirate 14 is offered 1 coin is because of the foregone conclusion that they will be offered 0 coins in round a. But what if, before round b even takes place, Pirate 12 came to a different conclusion about Pirate 11's behavior. What if Pirate 11 took a blood oath to give Pirate 14 the majority of the coins? And how would the concept of a blood oath affect all other pirates' behavior?</p>
+
+      <img src="./3.png">
+
+      <p>The above matrix takes the traditional pirate game and extends it to allow for blood oaths. Like Odysseus, pirates can tie themselves to the mast of their ships, in a sense. By publicly comitting to a certain payout ahead of time, they can affect the behavior of their outranking pirate. In this example, as Pirate 3 is preparing proposal b, the acting captain will try to secure the vote of either 4 or 5 in the cheapest possible manner. Because Pirate 4 has already comitted to receiving 49 gold coins, Pirate 3 knows that they will vote yay with an offer of 50 coins. Meanwhile, Pirate 5 will presumably hold out unless they receive at least 52 coins. But then Pirate 3 will look to pull the same trick on Pirate 2. By comitting to being the cheapest vote in round c, they stay a step ahead of the pack. Pirate 2, of course, has the same idea, and crafts a proposal such that they maximize their own payout for the following two conditions: 1. that their proposal passes, and 2. that they are the second cheapest vote (since proposal a needs two non-captain votes to pass). </p>
+
+      <p>One interesting point about this is that there are multiple equilibriums for round c. Pirate 2 could just as easily give Pirate 5 the 33 coin offer and secure an extra vote. Or, they could give Pirates 3 and 4 and extra coin and leave Pirate 5 with nothing. More on this later, but for now let's assume that Pirates will default to giving senior pirates better offers when the alternative doesn't help them. </p>
+
+      <p>Let's also assume that when an extra coin needs to be allocated to make the crew's math round out to 100 that it goes to a lower ranking pirate. After all, pirates like making their superior's lives more difficult when given the opportunity.</p>
+
+      <p>A standard pirate game would end here, but the payout matrix for the final 14 pirates would look quite different in a game with an arbitrarily large number of pirates.</p>
+
+      <img src="./4.png">
+
+      <p>As the crew gets larger it becomes more difficult to craft a rational proposal. So along with the two rules above (give more senior pirates the better offer when all else is equal, and give any extra coins to lower ranking pirates when it makes the math even), let's give the pirates some guidance. After all, a blood oath is serious business, and you only get to do it once.</p>
+
+      <p>Strategy 1 (When there's an odd number of pirates): count the number of votes you need for your proposal to pass. Buy off exactly that many pirates, prioritizing the pirates offered the least amount of gold in the previous round, but don't give them any more than you need to. Then, split the remaining gold among the remaining crew. Make sure that your next-most-senior pirate will buy you off when it's their turn. So for example, if your senior pirate needs 5 votes to pass their proposal, you want to be the fifth cheapest vote for them to buy. Maximize your gold given these constraints.</p>
+
+      <p>Strategy 2 (When there's an odd number of pirates): Figure out the number of votes you need, and prepare that many bundles of gold (plus one for yourself and an extra one). Each bundle should be split as equally as possible, but one should have a little less. Allocate the bundles as you see fit, and give yourself the smallest one.</p>
+
+      <p>One thing jumps out: even though large parts of the crew are still receiving poor offers, the split of gold is much more equitable.</p>
+
+      <p>Returning back to an important point from earlier: whenever there's an even number of pirates things get unpredictable. There are multiple possible equilibriums, and even rational pirates have to fall back on alliances, grudges, and gut feeling to break ties. When the crew no longer pays attention to the sensible defaults we outlined earlier, we see a non-deterministic outcome.</p>
+
+      <img src="./5.png">
+
+      <p>This is another valid equilibrium, and there's much less certainty. The captain gets a modest chunk of the booty, the second in command gets the largest portion, and the third in command is not guaranteed a single coin. But beyond that, all bets are off and anarchy takes hold.</p>
+
+      <p>Eventually, though, with a large enough crew you're bound to hit a pirate that has not taken a prior blood oath. So if you're the acting captain with no existing comittments, there's a still a third strategy:</p>
+
+      <p>Strategy 3 (When there are no senior pirates): Make whatever offers you need to secure majority vote, without regard to blood oaths.</p>
+
+      <img src="./6.png">
+    </section>
+
+    <section>
+
+      <h2>Application of the Theory</h2>
+
+      <p>The above analysis implies that it is impossible to predict the behavior of specific participants, but that it is possible to predict aggregate behavior. That is, theory predicts that a majority of rational pirates will vote for an outcome in which they recieve a profit, even if it is impossible to predict <em>which</em> participants will vote for the outcome.</p>
+
+      <p>With all of these factors in mind, we can determine that the most effiecient way to allocate "gold" is to utilize the game's natural information asymmetry and allow all participants to determine for themselves whether they are incentivized to vote for the proposal. And as we have already established, the theory suggests that at least a majority of the participants should determine that the incentives are in their favor. This means that we can rely on the following distibution rule:</p>
+
+      <blockquote>The first 729 participants to vote yay shall receive a positive payout.</blockquote>
+
+      <p>In practice, it is impossible to determine the order of votes, so it is possible that the proposal is settled with a super majority. In this case, the smart contract for this proposal would default to the participants who claim their prize first.</p>
+
+      <p>The precise payment, however, requires some thought. Rather than dealing in discrete gold coins, MMO deals in Ether, which is divisible by 1,000,000,000,000,000,000. This means that the actual payment that a majority of participants will accept is not clear.</p>
+
+      <p>A reasonable starting point would be the amount contributed (0.03 ETH) plus the amount of gas required to mint a MMO token (0.005). This leaves 20.221981 ETH for distribution between the remaining participants. This now resembles the Ultimatum Game, which suggests that participants are unlikely to accept an offer lower than 30% of the total balance, on average [<a href="https://en.wikipedia.org/wiki/Ultimatum_game#Experimental_results" target="_blank">2</a>]. Splitting 30% of the remaining balance 729 ways, in addition to a 0.035 ETH refund, results in a payment of 0.04332180288 ETH. However, due to the generosity of the proposer, this can be rounded up to 0.0435 ETH.</p>
+
+      <blockquote>Each participant who votes yay shall receive 0.0435 ETH, in addition to an NFT of this white paper.</blockquote>
+    </section>
+
+    <section>
+      <h2>Conclusion</h2>
+
+      <p>Having derived the optimal solution for Pirate Game with blood oaths, it should be clear at this point that the natural equillibrium is for the MMO contract balance to be split between the proposer and the first 729 respondants. </p>
+    </section>
+
+  </main>
+
+  <footer>
+    White Paper by Steve Pikelny (8/27/2023)
+  </footer>
+
+
+
+</body>
+</html>
