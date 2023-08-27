@@ -284,7 +284,7 @@
             <input id="voteTokenInput" type="number" placeholder="Token ID">
           </div>
           <div>
-            <input id="voteWeekInput" type="number" placeholder="Week #">
+            <input id="voteWeekInput" type="number" placeholder="Proposal Week #">
           </div>
 
           <div style="margin: 0.25em 0; font-size: 1.5em;">
@@ -633,8 +633,17 @@
             await MMO.connect(signer).castVote(tokenId, week, false)
           }
         } catch (e) {
-          if (e.error.message === 'execution reverted: 4') {
+          if (e?.error?.message === 'execution reverted: 4') {
             $voteError.innerHTML = `Signer does not own token id ${tokenId}`
+          } else if (e?.error?.message === 'execution reverted: 5') {
+            $voteError.innerHTML = `Cannot vote on weeks that have already passed`
+
+          } else if (e?.error?.message === 'execution reverted: 9') {
+            $voteError.innerHTML = `Cannot vote after contract has been settled`
+
+          } else if (e?.error?.message === 'execution reverted: 12') {
+            $voteError.innerHTML = `Cannot cast votes on tokens assigned to a later week`
+
           } else {
             $voteError.innerHTML = `<div style="max-width: 300px">${e?.error?.message || e?.message || e}</div>`
           }
