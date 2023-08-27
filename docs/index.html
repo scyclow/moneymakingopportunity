@@ -300,6 +300,7 @@
           </div>
 
           <button id="submitVote" style="font-size: 1.25em; margin-top: 0.5em; ">Vote</button>
+          <div id="voteError" class="error"></div>
         </div>
       </section>
 
@@ -425,6 +426,7 @@
   const $proposalInfo = $id('proposalInfo')
   const $leaderTokenSVG = $id('leaderTokenSVG')
   const $tokenLookupURI = $id('tokenLookupURI')
+  const $voteError = $id('voteError')
 
 
 
@@ -624,10 +626,18 @@
         const voteValueYay = $voteValueYay.checked
         const voteValueNay = $voteValueNay.checked
 
-        if (voteValueYay) {
-          await MMO.connect(signer).castVote(tokenId, week, true)
-        } else if (voteValueNay) {
-          await MMO.connect(signer).castVote(tokenId, week, false)
+        try {
+          if (voteValueYay) {
+            await MMO.connect(signer).castVote(tokenId, week, true)
+          } else if (voteValueNay) {
+            await MMO.connect(signer).castVote(tokenId, week, false)
+          }
+        } catch (e) {
+          if (e.error.message === 'execution reverted: 4') {
+            $voteError.innerHTML = `Signer does not own token id ${tokenId}`
+          } else {
+            $voteError.innerHTML = `<div style="max-width: 300px">${e?.error?.message || e?.message || e}</div>`
+          }
         }
       }
     }
