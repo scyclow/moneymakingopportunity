@@ -275,6 +275,11 @@
         <div id="leaderTokenSVG" class="center"></div>
       </section>
 
+      <section id="tokensOwnedSection" class="dashboard-section" style="display: none;">
+        <h2>Tokens Owned</h2>
+        <div id="tokenList" style="text-align: center; font-size: 1.5em;">Loading...</div>
+      </section>
+
       <section id="voteSection" class="dashboard-section" style="display: none;">
         <h2>Cast Vote</h2>
 
@@ -290,7 +295,7 @@
 
           <div style="margin: 0.25em 0; font-size: 1.5em;">
             <label style="cursor: pointer; margin-right: 1em;">
-              <input id="voteValueYay" type="radio" name="voteValue" value="true">
+              <input id="voteValueYay" type="radio" name="voteValue" value="true" checked="checked" >
               Yay
             </label>
 
@@ -428,6 +433,8 @@
   const $leaderTokenSVG = $id('leaderTokenSVG')
   const $tokenLookupURI = $id('tokenLookupURI')
   const $voteError = $id('voteError')
+  const $tokensOwnedSection = $id('tokensOwnedSection')
+  const $tokenList = $id('tokenList')
 
 
 
@@ -442,6 +449,13 @@
   const MMO_PROPOSAL_INFO_CONTRACT = {
     mainnet: '0x61618cAe4fF760fF67F440445E843E4b44bc7F12'
   }[env]
+
+
+  function times(t, fn) {
+    const out = []
+    for (let i = 0; i < t; i++) out.push(fn(i))
+    return out
+  }
 
 
   const bnToN = bn => Number(bn.toString())
@@ -621,6 +635,7 @@
 
     if (tokenBalance > 0) {
       $voteSection.style.display = 'block'
+      $tokensOwnedSection.style.display = 'block'
       $submitVote.onclick = async () => {
         const tokenId = Number($voteTokenInput.value)
         const week = Number($voteWeekInput.value)
@@ -707,6 +722,7 @@
       : proposalStr
 
 
+    voteWeekInput.value = currentWeek
 
     $connectedAs.innerHTML = `Connected as: ${signerAddress}`
 
@@ -746,6 +762,20 @@
     const now = Math.floor(Date.now()/1000)
 
     triggerTimer(nextWeekStart - now, $dashboardNextWeekTime)
+
+
+
+    $tokenList.innerHTML = (await Promise.all(
+      times(1474, async tokenId =>
+        await MMO.exists(tokenId) ? await MMO.ownerOf(tokenId) : 0
+      )
+    ))
+      .map((owner, tokenId) => ({ owner, tokenId }))
+      .filter(({ owner, tokenId }) => owner === signerAddress)
+      .map(({ tokenId }) => tokenId)
+      .join(', ')
+
+
   }
 
   $submitLookup.onclick = async () => {
@@ -795,7 +825,7 @@
             </tr>
 
             <tr>
-              <td>Propsed Settlement Address</td>
+              <td>Proposed Settlement Address</td>
               <td>${proposal === ethers.constants.AddressZero
                 ? 'None'
                 : `<a href="https://etherscan.io/address/${proposal}" target="_blank">${truncateAddr(proposal)}</a>`
