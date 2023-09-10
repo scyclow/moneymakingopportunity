@@ -465,11 +465,11 @@
   const b64Clean = raw => raw.replace(/data.*,/, '')
   const b64Decode = raw => atob(b64Clean(raw), 'base64').toString('utf8')
   const getSVG = rawURI => b64Decode(JSON.parse(utf8Clean(rawURI)).image)
-  const displayTokenSVG = rawURI => `
+  const displayTokenSVG = (rawURI, tokenOwner) => tokenOwner ? `
     <div style="width: 400px; max-width: 100%; border: 2px solid; margin-top: 1em; display: inherit;">
       ${getSVG(rawURI)}
     </div>
-    `
+    ` : ''
 
   function triggerTimer(timeLeft, $elem) {
     const with0 = x => x < 10 ? '0' + Math.floor(x) : Math.floor(x)
@@ -712,7 +712,7 @@
     const signerAddress = await signer.getAddress()
 
 
-    const leaderTokenSVG = displayTokenSVG(await MMO.connect(signer).tokenURI(leaderToken))
+    const leaderTokenSVG = displayTokenSVG(await MMO.connect(signer).tokenURI(leaderToken), leaderTokenOwner)
 
 
     const [proposalHref, proposalStr] = await MMOProposalInfo.connect(signer).tokenIdToInfo(leaderToken)
@@ -851,7 +851,7 @@
         </div>
       `
 
-      $tokenLookupURI.innerHTML = displayTokenSVG(await MMO.connect(signer).tokenURI(tokenId))
+      $tokenLookupURI.innerHTML = displayTokenSVG(await MMO.connect(signer).tokenURI(tokenId), tokenOwner)
     }
   }
 
