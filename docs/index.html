@@ -160,6 +160,10 @@
 
     }
 
+    .proposalInfo {
+      white-space: pre-line;
+    }
+
   </style>
 </head>
 <body>
@@ -223,7 +227,7 @@
 
       <section class="dashboard-section">
         <h2>Dashboard</h2>
-        <div id="proposalInfo"></div>
+        <div id="proposalInfo" class="proposalInfo"></div>
         <table>
           <tbody>
             <tr>
@@ -717,9 +721,10 @@
 
     const [proposalHref, proposalStr] = await MMOProposalInfo.connect(signer).tokenIdToInfo(leaderToken)
 
-    const proposalInfo = proposalStr && proposalHref
-      ? `<a href="${proposalHref}" target="_blank" rel="nofollow">${proposalStr}</a>`
-      : proposalStr
+    const cleanProposalStr = proposalStr.replaceAll('<script>', '<scr!pt>')
+    const proposalInfo = cleanProposalStr && proposalHref
+      ? `<a href="${proposalHref}" target="_blank" rel="nofollow">${cleanProposalStr}</a>`
+      : cleanProposalStr
 
 
     voteWeekInput.value = currentWeek
@@ -793,9 +798,10 @@
       const [yayVotes, nayVotes] = await MMO.connect(signer).calculateVotes(activeWeek)
       const [proposalHref, proposalStr] = await MMOProposalInfo.connect(signer).tokenIdToInfo(tokenId)
 
-      const proposalInfo = proposalStr && proposalHref
-        ? `<a href="${proposalHref}" target="_blank" rel="nofollow">${proposalStr}</a>`
-        : proposalStr
+      const cleanProposalStr = proposalStr.replaceAll('<script>', '<scr!pt>')
+      const proposalInfo = cleanProposalStr && proposalHref
+        ? `<a href="${proposalHref}" target="_blank" rel="nofollow">${cleanProposalStr}</a>`
+        : cleanProposalStr
 
 
       $tokenLookupTable.innerHTML = `
@@ -842,7 +848,7 @@
                 ? `
                   <tr>
                     <td>Proposal Info</td>
-                    <td>${proposalInfo}</td>
+                    <td class="proposalInfo">${proposalInfo}</td>
                   </tr>
                 `
                 : ''
